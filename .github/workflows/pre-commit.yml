@@ -1,0 +1,26 @@
+name: Check code/commit conventions
+
+on:
+  push:
+    branches:
+    - '*'
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: hmarr/debug-action@v2
+    - uses: actions/checkout@v3
+
+    - name: Setup Tools
+      uses: ./asdf-tools
+
+    - uses: pre-commit/action@v3.0.0
+
+  commitlint:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - uses: wagoid/commitlint-github-action@v5

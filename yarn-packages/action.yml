@@ -2,35 +2,35 @@ name: Install Packages with Yarn
 
 inputs:
   paths:
-    description: "List of directories where file package.json located"
+    description: List of directories where file package.json located
     default: .
     required: false
 
 runs:
   using: composite
   steps:
-    - name: Cache tools
+  - name: Cache tools
       # see https://github.com/actions/cache/commit/69d9d449aced6a2ede0bc19182fadc3a0a42d2b0
-      uses: actions/cache@69d9d449aced6a2ede0bc19182fadc3a0a42d2b0
-      with:
-        path: |
-          **/node_modules
-        key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
+    uses: actions/cache@69d9d449aced6a2ede0bc19182fadc3a0a42d2b0
+    with:
+      path: |
+        **/node_modules
+      key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
 
-    - name: Install Packages
-      run: |
-        plugins_str=$'${{ inputs.paths }}'
-        paths=(${paths_str//$'\n'/ })
-        dir="$(pwd)"
+  - name: Install Packages
+    run: |
+      plugins_str=$'${{ inputs.paths }}'
+      paths=(${paths_str//$'\n'/ })
+      dir="$(pwd)"
 
-        for path in "${paths[@]}"
-        do
-          target="${dir}/${path}"
-          if [ ! -d "${target}" ]; then
-              continue
-          fi
-          
-          cd "${target}"
-          yarn install
-        done
-      shell: bash
+      for path in "${paths[@]}"
+      do
+        target="${dir}/${path}"
+        if [ ! -d "${target}" ]; then
+            continue
+        fi
+
+        cd "${target}"
+        yarn install
+      done
+    shell: bash
