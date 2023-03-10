@@ -1,0 +1,47 @@
+name: Install asdf tools
+
+inputs:
+  plugins:
+    description: "List of additional plugins (e.g., <plugin>=<url>)"
+    required: false
+  context:
+    description: "Directory of the file .tool-versions located"
+    default: .
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Install asdf
+      # see https://github.com/asdf-vm/actions/commit/2368b9def7a1194d67ae0afd9cbbd01e15f658a0
+      uses: asdf-vm/actions/setup@2368b9def7a1194d67ae0afd9cbbd01e15f658a0
+
+    - name: Cache tools
+      # see https://github.com/actions/cache/commit/69d9d449aced6a2ede0bc19182fadc3a0a42d2b0
+      uses: actions/cache@69d9d449aced6a2ede0bc19182fadc3a0a42d2b0
+      with:
+        path: /home/runner/.asdf
+        key: ${{ runner.os }}-${{ hashFiles('**/.tool-versions') }}
+
+    - name: Install asdf tools
+      run: |
+        cd ${{ inputs.context }}
+
+        plugins_str=$'${{ inputs.plugins }}'
+        plugins=(${plugins_str//$'\n'/ })
+
+        for plugin in "${plugins[@]}"
+        do
+          readarray -d '=' -t keyurl <<< "$plugin"
+          if (( ${#keyurl[@]} < 2 )); then
+            continue
+          fi
+
+          asdf plugin-add ${keyurl[0]} ${keyurl[1]} || true
+        done
+        
+        cat .tool-versions | cut -f 1 -d ' ' | xargs -n 1 asdf plugin-add || true
+        asdf plugin-update --all
+        asdf install
+        asdf reshim
+      shell: bash

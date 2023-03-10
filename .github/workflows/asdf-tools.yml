@@ -1,0 +1,24 @@
+name: Test action asdf-tools
+on:
+  push:
+    branches:
+    - __noop
+
+jobs:
+  tests-pre-commit:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: hmarr/debug-action@v2
+    - uses: actions/checkout@v3
+
+    - name: Install asdf tools in another directory
+      uses: ./asdf-tools
+      with:
+        context: .github/workflows
+
+    - name: Install asdf tools with additional plugins
+      uses: ./asdf-tools
+      with:
+        plugins: |
+          mongodb=https://github.com/junminahn/asdf-mongodb.git
+          docker-compose=https://github.com/virtualstaticvoid/asdf-docker-compose.git
