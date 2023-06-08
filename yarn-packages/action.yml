@@ -26,6 +26,7 @@ runs:
       for path in "${paths[@]}"
       do
         target="${dir}/${path}"
+        echo "${target}"
         if [ ! -d "${target}" ]; then
             continue
         fi
