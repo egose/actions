@@ -76,6 +76,7 @@ runs:
       context: ${{ inputs.docker-context }}
       file: ${{ inputs.docker-file }}
       push: true
+      provenance: false
       tags: ${{ steps.meta.outputs.tags }}
       build-args: ${{ inputs.docker-args }}
       labels: ${{ steps.meta.outputs.labels }}
