@@ -18,7 +18,7 @@ inputs:
     description: List of tags as key-value pair attributes
     required: true
   metadata-labels:
-    description: List of tags as key-value pair attributes
+    description: List of labels as key-value pair attributes
     required: false
   docker-context:
     description: Docker build's context
@@ -27,7 +27,7 @@ inputs:
     description: Path to the Dockerfile
     required: false
   docker-args:
-    description: Docker image build args
+    description: List of build args as key-value pair attributes
     required: false
 
 runs:
