@@ -52,7 +52,7 @@ runs:
 
   - name: Set up Docker Buildx
     # see https://github.com/docker/setup-buildx-action/commit/f03ac48505955848960e80bbb68046aa35c7b9e7
-    uses: docker/setup-buildx-action@be3701b2116d2f723573ca9e8cdb4ca85d3cdaf0
+    uses: docker/setup-buildx-action@5138f76647652447004da686b2411557eaf65f33
 
   - name: Set Environment variables
     run: |
