@@ -103,8 +103,22 @@ runs:
       output: trivy-results.json
 
   - name: Convert Trivy JSON report into sarif
+    if: ${{ inputs.trivy == 'true' }}
     run: |
       trivy convert --format sarif --output trivy-results.sarif trivy-results.json
+      trivy convert --format table --output trivy-results.table trivy-results.json
+
+      if [[ -s trivy-results.table ]]; then
+        {
+          echo "### Security Output"
+          echo "<details><summary>Click to expand</summary>"
+          echo ""
+          echo '```markdown'
+          cat trivy-results.table
+          echo '```'
+          echo "</details>"
+        } >> $GITHUB_STEP_SUMMARY
+      fi
     shell: bash
 
   - name: Upload Trivy scan results to GitHub Security tab
