@@ -18,7 +18,7 @@ inputs:
     description: List of tags as key-value pair attributes
     required: true
   metadata-labels:
-    description: List of tags as key-value pair attributes
+    description: List of labels as key-value pair attributes
     required: false
   docker-context:
     description: Docker build's context
@@ -27,15 +27,19 @@ inputs:
     description: Path to the Dockerfile
     required: false
   docker-args:
-    description: Docker image build args
+    description: List of build args as key-value pair attributes
     required: false
+  trivy:
+    description: Run Trivy vulnerability scanner
+    required: false
+    default: 'false'
 
 runs:
   using: composite
   steps:
   - name: Log in to Docker Container Registry
-    # see https://github.com/docker/login-action/commit/f4ef78c080cd8ba55a85445d5b36e214a81df20a
-    uses: docker/login-action@1f36f5b7a2d2f7bfd524795fc966e6d88c37baa9
+    # See https://github.com/docker/login-action/commits/master/
+    uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
     with:
       registry: ${{ inputs.registry-url }}
       username: ${{ inputs.registry-username }}
@@ -43,16 +47,16 @@ runs:
 
   - name: Extract metadata
     id: meta
-    # see https://github.com/docker/metadata-action/commit/507c2f2dc502c992ad446e3d7a5dfbe311567a96
-    uses: docker/metadata-action@70b2cdc6480c1a8b86edf1777157f8f437de2166
+    # See https://github.com/docker/metadata-action/commits/master/
+    uses: docker/metadata-action@60a0d343a0d8a18aedee9d34e62251f752153bdb
     with:
       images: ${{ inputs.registry-url }}/${{ inputs.image-name }}
       tags: ${{ inputs.metadata-tags }}
       labels: ${{ inputs.metadata-labels }}
 
   - name: Set up Docker Buildx
-    # see https://github.com/docker/setup-buildx-action/commit/f03ac48505955848960e80bbb68046aa35c7b9e7
-    uses: docker/setup-buildx-action@460e45646ded27e46146cedd75d922e7fd9ef69f
+    # See https://github.com/docker/setup-buildx-action/commits/master/
+    uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db
 
   - name: Set Environment variables
     run: |
@@ -60,22 +64,23 @@ runs:
       echo "DOCKER_LAYERS_PATH=${DOCKER_LAYERS_PATH}" >> $GITHUB_ENV
     shell: bash
 
-    # see https://github.com/docker/build-push-action/issues/252#issuecomment-744400434
+    # See https://github.com/docker/build-push-action/issues/252#issuecomment-744400434
   - name: Cache Docker layers
-    # see https://github.com/actions/cache/commit/69d9d449aced6a2ede0bc19182fadc3a0a42d2b0
-    uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a
+    # See https://github.com/actions/cache/commits/main/
+    uses: actions/cache@81382a721fc89d96eca335d0c3ba33144b2baa9d
     with:
       path: ${{ env.DOCKER_LAYERS_PATH }}
       key: ${{ runner.os }}-buildx-${{ inputs.image-name }}-${{ github.sha }}
       restore-keys: ${{ runner.os }}-buildx-${{ inputs.image-name }}
 
   - name: Build and push Docker image
-    # see https://github.com/docker/build-push-action/commit/3b5e8027fcad23fda98b2e3ac259d8d67585f671
-    uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75
+    # See https://github.com/docker/build-push-action/commits/master/
+    uses: docker/build-push-action@5cd11c3a4ced054e52742c5fd54dca954e0edd85
     with:
       context: ${{ inputs.docker-context }}
       file: ${{ inputs.docker-file }}
       push: true
+      provenance: false
       tags: ${{ steps.meta.outputs.tags }}
       build-args: ${{ inputs.docker-args }}
       labels: ${{ steps.meta.outputs.labels }}
@@ -87,3 +92,39 @@ runs:
       rm -rf ${{ env.DOCKER_LAYERS_PATH }}
       mv ${{ env.DOCKER_LAYERS_PATH }}-new ${{ env.DOCKER_LAYERS_PATH }}
     shell: bash
+
+  - name: Run Trivy vulnerability scanner
+    if: ${{ inputs.trivy == 'true' }}
+    # See https://github.com/aquasecurity/trivy-action/commits/master/
+    uses: aquasecurity/trivy-action@cf990b19d84bbbe1eb8833659989a7c1029132e3
+    with:
+      image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
+      format: json
+      output: trivy-results.json
+
+  - name: Convert Trivy JSON report into sarif
+    if: ${{ inputs.trivy == 'true' }}
+    run: |
+      trivy convert --format sarif --output trivy-results.sarif trivy-results.json
+      trivy convert --format table --output trivy-results.table trivy-results.json
+
+      if [[ -s trivy-results.table ]]; then
+        {
+          echo "### Security Output"
+          echo "<details><summary>Click to expand</summary>"
+          echo ""
+          echo '```markdown'
+          cat trivy-results.table
+          echo '```'
+          echo "</details>"
+        } >> $GITHUB_STEP_SUMMARY
+      fi
+    shell: bash
+
+  - name: Upload Trivy scan results to GitHub Security tab
+    if: ${{ inputs.trivy == 'true' }}
+    # See https://github.com/github/codeql-action/commits/main/
+    uses: github/codeql-action/upload-sarif@467d7e6d9e138cb28eeebd638e6f0dbab1fd435e
+    with:
+      sarif_file: trivy-results.sarif
+      category: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
