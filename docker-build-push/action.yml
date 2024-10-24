@@ -34,6 +34,35 @@ inputs:
     required: false
     default: 'false'
 
+outputs:
+  docker-version:
+    description: Generated Docker image version
+    value: ${{ steps.meta.outputs.docker-version }}
+  docker-tags:
+    description: Generated Docker tags
+    value: ${{ steps.meta.outputs.docker-tags }}
+  docker-labels:
+    description: Generated Docker labels
+    value: ${{ steps.meta.outputs.docker-labels }}
+  docker-annotations:
+    description: Generated annotations
+    value: ${{ steps.meta.outputs.docker-annotations }}
+  metadata-json:
+    description: JSON output of tags and labels
+    value: ${{ steps.meta.outputs.metadata-json }}
+  bake-file-tags:
+    description: Bake definition file with tags
+    value: ${{ steps.meta.outputs.bake-file-tags }}
+  bake-file-labels:
+    description: Bake definition file with labels
+    value: ${{ steps.meta.outputs.bake-file-labels }}
+  bake-file-annotations:
+    description: Bake definiton file with annotations
+    value: ${{ steps.meta.outputs.bake-file-annotations }}
+  bake-file:
+    description: Bake definition file with tags and labels
+    value: ${{ steps.meta.outputs.bake-file }}
+
 runs:
   using: composite
   steps:
