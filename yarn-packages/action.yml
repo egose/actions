@@ -11,7 +11,7 @@ runs:
   steps:
   - name: Cache tools
       # see https://github.com/actions/cache/commit/69d9d449aced6a2ede0bc19182fadc3a0a42d2b0
-    uses: actions/cache@81382a721fc89d96eca335d0c3ba33144b2baa9d
+    uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a
     with:
       path: |
         **/node_modules
