@@ -39,7 +39,7 @@ runs:
   steps:
   - name: Log in to Docker Container Registry
     # See https://github.com/docker/login-action/commits/master/
-    uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+    uses: docker/login-action@06895751d15a223ec091bea144ad5c7f50d228d0
     with:
       registry: ${{ inputs.registry-url }}
       username: ${{ inputs.registry-username }}
