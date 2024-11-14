@@ -153,7 +153,7 @@ runs:
   - name: Upload Trivy scan results to GitHub Security tab
     if: ${{ inputs.trivy == 'true' }}
     # See https://github.com/github/codeql-action/commits/main/
-    uses: github/codeql-action/upload-sarif@4dc1519e3cb370190074f4511ecb01f49430cb2b
+    uses: github/codeql-action/upload-sarif@a1695c562bbfa68dc5ab58c9b5e9f616b52bf5be
     with:
       sarif_file: trivy-results.sarif
       category: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
