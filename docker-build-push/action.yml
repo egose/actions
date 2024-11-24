@@ -77,7 +77,7 @@ runs:
   - name: Extract metadata
     id: meta
     # See https://github.com/docker/metadata-action/commits/master/
-    uses: docker/metadata-action@44d81d6d2a5a935e1a481942268529623f1f5ccd
+    uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96
     with:
       images: ${{ inputs.registry-url }}/${{ inputs.image-name }}
       tags: ${{ inputs.metadata-tags }}
