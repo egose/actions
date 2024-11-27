@@ -42,6 +42,17 @@ runs:
 
       cat .tool-versions | cut -f 1 -d ' ' | xargs -n 1 asdf plugin-add || true
       asdf plugin-update --all
-      asdf install
+
+      while read -r line; do
+        # Skip empty lines or lines starting with comments (#)
+        if [[ -n "$line" && ! "$line" =~ ^# ]]; then
+          tool=$(echo "$line" | awk '{print $1}')
+          version=$(echo "$line" | awk '{print $2}')
+
+          echo "Installing $tool $version..."
+          asdf install "$tool" "$version"
+        fi
+      done < .tool-versions
+
       asdf reshim
     shell: bash
