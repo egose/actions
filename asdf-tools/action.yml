@@ -14,7 +14,7 @@ runs:
   steps:
   - name: Install asdf
       # see https://github.com/asdf-vm/actions/commit/2368b9def7a1194d67ae0afd9cbbd01e15f658a0
-    uses: asdf-vm/actions/setup@6278efebb38ae025cc91dd008910f549e775a8c8
+    uses: asdf-vm/actions/setup@1bf052e01b498bba4f98e1bbb5c609bc212cf463
 
   - name: Cache tools
       # see https://github.com/actions/cache/commit/69d9d449aced6a2ede0bc19182fadc3a0a42d2b0
