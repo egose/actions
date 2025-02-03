@@ -13,15 +13,15 @@ runs:
   using: composite
   steps:
   - name: Install asdf
-      # see https://github.com/asdf-vm/actions/commit/2368b9def7a1194d67ae0afd9cbbd01e15f658a0
+      # See https://github.com/asdf-vm/actions/commit/main/
     uses: asdf-vm/actions/setup@1bf052e01b498bba4f98e1bbb5c609bc212cf463
 
   - name: Cache tools
-      # see https://github.com/actions/cache/commit/69d9d449aced6a2ede0bc19182fadc3a0a42d2b0
+      # See https://github.com/actions/cache/commits/main/
     uses: actions/cache@36f1e144e1c8edb0a652766b484448563d8baf46
     with:
       path: /home/runner/.asdf
-      key: ${{ runner.os }}-${{ hashFiles('**/.tool-versions') }}
+      key: ${{ runner.os }}-^0.16.0-${{ hashFiles('**/.tool-versions') }}
 
   - name: Install asdf tools
     run: |
@@ -37,11 +37,11 @@ runs:
           continue
         fi
 
-        asdf plugin-add ${keyurl[0]} ${keyurl[1]} || true
+        asdf plugin add ${keyurl[0]} ${keyurl[1]} || true
       done
 
-      cat .tool-versions | cut -f 1 -d ' ' | xargs -n 1 asdf plugin-add || true
-      asdf plugin-update --all
+      cat .tool-versions | cut -f 1 -d ' ' | xargs -n 1 asdf plugin add || true
+      asdf plugin update --all
 
       while read -r line; do
         # Skip empty lines or lines starting with comments (#)
