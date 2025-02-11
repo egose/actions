@@ -1,8 +1,12 @@
 name: Install asdf tools
 
 inputs:
+  version:
+    description: The version of asdf
+    default: v0.16.2
+    required: false
   plugins:
-    description: List of additional plugins (e.g., <plugin>=<url>)
+    description: List of additional plugins (e.g., <plugin>=<url>, comma-separated)
     required: false
   context:
     description: Directory of the file .tool-versions located
@@ -13,15 +17,22 @@ runs:
   using: composite
   steps:
   - name: Install asdf
-      # See https://github.com/asdf-vm/actions/commit/main/
-    uses: asdf-vm/actions/setup@1bf052e01b498bba4f98e1bbb5c609bc212cf463
+    run: |
+      set -e
+      curl -fsSL -o asdf.tar.gz "https://github.com/asdf-vm/asdf/releases/download/${{ inputs.version }}/asdf-${{ inputs.version }}-linux-amd64.tar.gz"
+      tar -xzf asdf.tar.gz
+      mv asdf /usr/local/bin/
+      rm -f asdf.tar.gz
+      which asdf
+      echo "asdf installed successfully"
+    shell: bash
 
   - name: Cache tools
       # See https://github.com/actions/cache/commits/main/
     uses: actions/cache@36f1e144e1c8edb0a652766b484448563d8baf46
     with:
       path: /home/runner/.asdf
-      key: ${{ runner.os }}-^0.16.0-${{ hashFiles('**/.tool-versions') }}
+      key: ${{ runner.os }}-${{ inputs.version }}-${{ hashFiles('**/.tool-versions') }}
 
   - name: Install asdf tools
     run: |
