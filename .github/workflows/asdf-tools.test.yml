@@ -5,7 +5,7 @@ on:
     - __noop
 
 jobs:
-  tests-pre-commit:
+  asdf-tools-test:
     runs-on: ubuntu-22.04
     steps:
     - uses: hmarr/debug-action@v2
