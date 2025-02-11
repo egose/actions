@@ -24,7 +24,7 @@ runs:
       mv asdf /usr/local/bin/
       rm -f asdf.tar.gz
       which asdf
-      PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
+      export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
       echo "asdf installed successfully"
     shell: bash
 
