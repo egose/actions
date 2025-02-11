@@ -41,6 +41,7 @@ runs:
       plugins_str=$'${{ inputs.plugins }}'
       plugins=(${plugins_str//$'\n'/ })
 
+      echo "✅Adding additional plugins..."
       for plugin in "${plugins[@]}"
       do
         readarray -d '=' -t keyurl <<< "$plugin"
@@ -51,9 +52,11 @@ runs:
         asdf plugin add ${keyurl[0]} ${keyurl[1]} || true
       done
 
+      echo "✅Adding main plugins..."
       cat .tool-versions | cut -f 1 -d ' ' | xargs -n 1 asdf plugin add || true
       asdf plugin update --all
 
+      echo "✅Installing tools..."
       while read -r line; do
         # Skip empty lines or lines starting with comments (#)
         if [[ -n "$line" && ! "$line" =~ ^# ]]; then
@@ -66,4 +69,5 @@ runs:
       done < .tool-versions
 
       asdf reshim
+      asdf install || true
     shell: bash
