@@ -24,6 +24,7 @@ runs:
       mv asdf /usr/local/bin/
       rm -f asdf.tar.gz
       which asdf
+      PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
       echo "asdf installed successfully"
     shell: bash
 
@@ -49,6 +50,7 @@ runs:
           continue
         fi
 
+        echo "➡️${keyurl[0]} ${keyurl[1]}..."
         asdf plugin add ${keyurl[0]} ${keyurl[1]} || true
       done
 
@@ -63,7 +65,7 @@ runs:
           tool=$(echo "$line" | awk '{print $1}')
           version=$(echo "$line" | awk '{print $2}')
 
-          echo "Installing $tool $version..."
+          echo "➡️$tool $version..."
           asdf install "$tool" "$version" || true
         fi
       done < .tool-versions
