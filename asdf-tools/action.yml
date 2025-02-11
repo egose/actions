@@ -24,8 +24,9 @@ runs:
       mv asdf /usr/local/bin/
       rm -f asdf.tar.gz
       which asdf
-      export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
-      echo "asdf installed successfully"
+      export PATH="${ASDF_DATA_DIR:-/home/runner/.asdf}/shims:$PATH"
+      echo "$PATH"
+      echo "✅asdf installed successfully"
     shell: bash
 
   - name: Cache tools
