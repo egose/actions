@@ -61,7 +61,7 @@ runs:
           version=$(echo "$line" | awk '{print $2}')
 
           echo "Installing $tool $version..."
-          asdf install "$tool" "$version"
+          asdf install "$tool" "$version" || true
         fi
       done < .tool-versions
 
