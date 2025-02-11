@@ -69,5 +69,5 @@ runs:
       done < .tool-versions
 
       asdf reshim
-      asdf install
+      asdf install || true
     shell: bash
