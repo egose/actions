@@ -24,7 +24,8 @@ runs:
       mv asdf /usr/local/bin/
       rm -f asdf.tar.gz
       which asdf
-      export PATH="${ASDF_DATA_DIR:-/home/runner/.asdf}/shims:$PATH"
+      echo 'export PATH="${ASDF_DATA_DIR:-/home/runner/.asdf}/shims:$PATH"' >> /home/runner/.bashrc
+      source /home/runner/.bashrc
       echo "$PATH"
       echo "✅asdf installed successfully"
     shell: bash
@@ -68,6 +69,7 @@ runs:
 
           echo "➡️$tool $version..."
           asdf install "$tool" "$version" || true
+          which "$tool"
         fi
       done < .tool-versions
 
