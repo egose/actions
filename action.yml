@@ -67,7 +67,7 @@ runs:
     # See https://github.com/docker/build-push-action/issues/252#issuecomment-744400434
   - name: Cache Docker layers
     # See https://github.com/actions/cache/commits/main/
-    uses: actions/cache@36f1e144e1c8edb0a652766b484448563d8baf46
+    uses: actions/cache@9fa7e61ec7e1f44ac75218e7aaea81da8856fd11
     with:
       path: ${{ env.DOCKER_LAYERS_PATH }}
       key: ${{ runner.os }}-buildx-${{ inputs.image-name }}-${{ github.sha }}
