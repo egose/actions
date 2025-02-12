@@ -24,21 +24,23 @@ runs:
       mv asdf /usr/local/bin/
       rm -f asdf.tar.gz
       which asdf
-      echo 'export PATH="${ASDF_DATA_DIR:-/home/runner/.asdf}/shims:$PATH"' >> /home/runner/.bashrc
-      source /home/runner/.bashrc
+      echo "🏠$HOME"
+      echo 'export PATH="${ASDF_DATA_DIR:-~/.asdf}/shims:$PATH"' >> ~/.bash_profile
+      source ~/.bash_profile
       echo "$PATH"
       echo "✅asdf installed successfully"
     shell: bash
 
   - name: Cache tools
-      # See https://github.com/actions/cache/commits/main/
+    # See https://github.com/actions/cache/commits/main/
     uses: actions/cache@36f1e144e1c8edb0a652766b484448563d8baf46
     with:
-      path: /home/runner/.asdf
+      path: ~/.asdf
       key: ${{ runner.os }}-${{ inputs.version }}-${{ hashFiles('**/.tool-versions') }}
 
   - name: Install asdf tools
     run: |
+      echo ${{ inputs.context }}
       cd ${{ inputs.context }}
 
       plugins_str=$'${{ inputs.plugins }}'
@@ -69,10 +71,10 @@ runs:
 
           echo "➡️$tool $version..."
           asdf install "$tool" "$version" || true
-          which "$tool"
         fi
       done < .tool-versions
 
       asdf reshim
       asdf install || true
+      ls -al ~/.asdf/installs
     shell: bash
