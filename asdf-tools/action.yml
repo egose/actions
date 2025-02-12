@@ -19,15 +19,12 @@ runs:
   - name: Install asdf
     run: |
       set -e
+      echo "🏠$HOME"
       curl -fsSL -o asdf.tar.gz "https://github.com/asdf-vm/asdf/releases/download/${{ inputs.version }}/asdf-${{ inputs.version }}-linux-amd64.tar.gz"
       tar -xzf asdf.tar.gz
-      mv asdf /usr/local/bin/
       rm -f asdf.tar.gz
-      which asdf
-      echo "🏠$HOME"
-      echo 'export PATH="${ASDF_DATA_DIR:-~/.asdf}/shims:$PATH"' >> ~/.bash_profile
-      source ~/.bash_profile
-      echo "$PATH"
+      mv asdf /usr/local/bin/
+      echo "${ASDF_DATA_DIR:-~/.asdf}/shims" >> $GITHUB_PATH
       echo "✅asdf installed successfully"
     shell: bash
 
@@ -40,6 +37,8 @@ runs:
 
   - name: Install asdf tools
     run: |
+      asdf --version
+      echo "$PATH"
       echo ${{ inputs.context }}
       cd ${{ inputs.context }}
 
@@ -76,5 +75,4 @@ runs:
 
       asdf reshim
       asdf install || true
-      ls -al ~/.asdf/installs
     shell: bash
