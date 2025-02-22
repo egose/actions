@@ -3,7 +3,7 @@ name: Install asdf tools
 inputs:
   version:
     description: The version of asdf
-    default: v0.16.2
+    default: v0.16.3
     required: false
   plugins:
     description: List of additional plugins (e.g., <plugin>=<url>, comma-separated)
@@ -19,13 +19,15 @@ runs:
   - name: Install asdf
     run: |
       set -e
-      echo "🏠$HOME"
+      echo "🏠 $HOME"
       curl -fsSL -o asdf.tar.gz "https://github.com/asdf-vm/asdf/releases/download/${{ inputs.version }}/asdf-${{ inputs.version }}-linux-amd64.tar.gz"
       tar -xzf asdf.tar.gz
       rm -f asdf.tar.gz
       mv asdf /usr/local/bin/
-      echo "${ASDF_DATA_DIR:-~/.asdf}/shims" >> $GITHUB_PATH
-      echo "✅asdf installed successfully"
+      echo "${ASDF_DATA_DIR:-$HOME/.asdf}/shims" >> $GITHUB_PATH
+      echo 'export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"' >> ~/.bashrc
+      source ~/.bashrc
+      echo "🚀 asdf installed successfully"
     shell: bash
 
   - name: Cache tools
@@ -45,7 +47,7 @@ runs:
       plugins_str=$'${{ inputs.plugins }}'
       plugins=(${plugins_str//$'\n'/ })
 
-      echo "✅Adding additional plugins..."
+      echo "✅ Adding additional plugins..."
       for plugin in "${plugins[@]}"
       do
         readarray -d '=' -t keyurl <<< "$plugin"
@@ -53,26 +55,29 @@ runs:
           continue
         fi
 
-        echo "➡️${keyurl[0]} ${keyurl[1]}..."
+        echo "➡️ ${keyurl[0]} ${keyurl[1]}..."
         asdf plugin add ${keyurl[0]} ${keyurl[1]} || true
       done
 
-      echo "✅Adding main plugins..."
+      echo "✅ Adding main plugins..."
       cat .tool-versions | cut -f 1 -d ' ' | xargs -n 1 asdf plugin add || true
       asdf plugin update --all
+      asdf plugin list --urls --refs
 
-      echo "✅Installing tools..."
+      echo "✅ Installing tools..."
       while read -r line; do
         # Skip empty lines or lines starting with comments (#)
         if [[ -n "$line" && ! "$line" =~ ^# ]]; then
           tool=$(echo "$line" | awk '{print $1}')
           version=$(echo "$line" | awk '{print $2}')
 
-          echo "➡️$tool $version..."
+          echo "➡️ $tool $version..."
           asdf install "$tool" "$version" || true
+          asdf reshim "$tool"
         fi
       done < .tool-versions
 
       asdf reshim
       asdf install || true
+      echo "🚀 tools installed successfully"
     shell: bash
