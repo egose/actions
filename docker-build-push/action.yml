@@ -91,6 +91,7 @@ runs:
     run: |
       DOCKER_LAYERS_PATH="/tmp/.buildx-cache-${{ inputs.image-name }}"
       echo "DOCKER_LAYERS_PATH=${DOCKER_LAYERS_PATH}" >> $GITHUB_ENV
+      echo "BUILD_TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
     shell: bash
 
     # See https://github.com/docker/build-push-action/issues/252#issuecomment-744400434
@@ -111,7 +112,9 @@ runs:
       push: true
       provenance: false
       tags: ${{ steps.meta.outputs.tags }}
-      build-args: ${{ inputs.docker-args }}
+      build-args: |
+        BUILD_TIMESTAMP=${{ env.BUILD_TIMESTAMP }}
+        ${{ inputs.docker-args }}
       labels: ${{ steps.meta.outputs.labels }}
       cache-from: type=local,src=${{ env.DOCKER_LAYERS_PATH }}
       cache-to: type=local,dest=${{ env.DOCKER_LAYERS_PATH }}-new
