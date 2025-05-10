@@ -1,2 +1,2 @@
 pre-commit==4.2.0
-setuptools==80.0.0
+setuptools==80.4.0
