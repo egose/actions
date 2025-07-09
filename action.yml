@@ -96,7 +96,7 @@ runs:
   - name: Run Trivy vulnerability scanner
     if: ${{ inputs.trivy == 'true' }}
     # See https://github.com/aquasecurity/trivy-action/commits/master/
-    uses: aquasecurity/trivy-action@76071ef0d7ec797419534a183b498b4d6366cf37
+    uses: aquasecurity/trivy-action@77137e9dc3ab1b329b7c8a38c2eb7475850a14e8
     with:
       image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
       format: json
