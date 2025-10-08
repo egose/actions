@@ -2,17 +2,27 @@ name: Run and Handle Pre-Commit
 description: Run pre-commit hooks, commit changes if needed, or fail the build.
 
 inputs:
-  github_token:
-    description: GITHUB_TOKEN for committing changes
-    required: true
+  config:
+    description: Path to pre-commit configuration file
+    required: false
+    default: .pre-commit-config.yaml
+
 runs:
   using: composite
   steps:
+  - name: Cache pre-commit environment
+    uses: actions/cache@v4
+    with:
+      path: ~/.cache/pre-commit
+      key: pre-commit-${{ hashFiles(inputs.config) }}
+      restore-keys: |
+        pre-commit-
+
   - name: Rerun Pre-Commit Hooks
     id: precommit
     shell: bash
     run: |
-      pre-commit run --config=.pre-commit-config.yaml --color=always --show-diff-on-failure --all-files || true
+      pre-commit run --config="${{ inputs.config }}" --color=always --show-diff-on-failure --all-files || true
 
       if ! git diff --exit-code; then
         echo "pre_commit_made_changes=true" >> $GITHUB_OUTPUT
@@ -25,13 +35,15 @@ runs:
   - name: Commit & Push Pre-Commit Fixes (PR only)
     if: steps.precommit.outputs.pre_commit_made_changes == 'true' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     shell: bash
+    env:
+      HEAD_REF: ${{ github.head_ref }}
     run: |
       git config user.name "github-actions[bot]"
       git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-      git checkout "${{ github.head_ref }}"
+      git checkout "$HEAD_REF"
       git add .
       git commit -m "chore(pre-commit): apply automatic formatting and linting fixes"
-      git push origin "${{ github.head_ref }}"
+      git push origin "$HEAD_REF"
 
   - name: Fail on Pre-Commit Changes (push only)
     if: steps.precommit.outputs.pre_commit_made_changes == 'true' && github.event_name == 'push'
