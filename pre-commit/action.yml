@@ -1,0 +1,41 @@
+name: Run and Handle Pre-Commit
+description: Run pre-commit hooks, commit changes if needed, or fail the build.
+
+inputs:
+  github_token:
+    description: GITHUB_TOKEN for committing changes
+    required: true
+runs:
+  using: composite
+  steps:
+  - name: Rerun Pre-Commit Hooks
+    id: precommit
+    shell: bash
+    run: |
+      pre-commit run --config=.pre-commit-config.yaml --color=always --show-diff-on-failure --all-files || true
+
+      if ! git diff --exit-code; then
+        echo "pre_commit_made_changes=true" >> $GITHUB_OUTPUT
+        echo "Pre-commit made changes, committing and pushing..."
+      else
+        echo "pre_commit_made_changes=false" >> $GITHUB_OUTPUT
+        echo "No pre-commit changes detected."
+      fi
+
+  - name: Commit & Push Pre-Commit Fixes (PR only)
+    if: steps.precommit.outputs.pre_commit_made_changes == 'true' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    shell: bash
+    run: |
+      git config user.name "github-actions[bot]"
+      git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      git checkout "${{ github.head_ref }}"
+      git add .
+      git commit -m "chore(pre-commit): apply automatic formatting and linting fixes"
+      git push origin "${{ github.head_ref }}"
+
+  - name: Fail on Pre-Commit Changes (push only)
+    if: steps.precommit.outputs.pre_commit_made_changes == 'true' && github.event_name == 'push'
+    shell: bash
+    run: |
+      echo "❌ Pre-commit made changes. Please run 'pre-commit run --all-files' locally and commit the changes."
+      exit 1
