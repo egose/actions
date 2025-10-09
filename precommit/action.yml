@@ -1,11 +1,18 @@
 name: Run and Handle Pre-Commit
 description: Run pre-commit hooks, commit changes if needed, or fail the build.
-
 inputs:
   config:
     description: Path to pre-commit configuration file
     required: false
     default: .pre-commit-config.yaml
+  commit_on_pr:
+    description: Commit and push changes when running on pull_request
+    required: false
+    default: 'true'
+  commit_on_push:
+    description: Commit and push changes when running on push
+    required: false
+    default: 'false'
 
 runs:
   using: composite
@@ -23,7 +30,6 @@ runs:
     shell: bash
     run: |
       pre-commit run --config="${{ inputs.config }}" --color=always --show-diff-on-failure --all-files || true
-
       if ! git diff --exit-code; then
         echo "pre_commit_made_changes=true" >> $GITHUB_OUTPUT
         echo "Pre-commit made changes, committing and pushing..."
@@ -32,11 +38,11 @@ runs:
         echo "No pre-commit changes detected."
       fi
 
-  - name: Commit & Push Pre-Commit Fixes (PR only)
-    if: steps.precommit.outputs.pre_commit_made_changes == 'true' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+  - name: Commit & Push Pre-Commit Fixes
+    if: steps.precommit.outputs.pre_commit_made_changes == 'true' && ( (github.event_name == 'pull_request' && inputs.commit_on_pr == 'true') || (github.event_name == 'push' && inputs.commit_on_push == 'true') )
     shell: bash
     env:
-      HEAD_REF: ${{ github.head_ref }}
+      HEAD_REF: ${{ github.head_ref || github.ref_name }}
     run: |
       git config user.name "github-actions[bot]"
       git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -45,9 +51,10 @@ runs:
       git commit -m "chore(pre-commit): apply automatic formatting and linting fixes"
       git push origin "$HEAD_REF"
 
-  - name: Fail on Pre-Commit Changes (push only)
-    if: steps.precommit.outputs.pre_commit_made_changes == 'true' && github.event_name == 'push'
+  - name: Fail if Pre-Commit Changes and Commit Not Allowed
+    if: steps.precommit.outputs.pre_commit_made_changes == 'true' && ( (github.event_name == 'push' && inputs.commit_on_push != 'true') || (github.event_name == 'pull_request' && inputs.commit_on_pr != 'true') )
     shell: bash
     run: |
-      echo "❌ Pre-commit made changes. Please run 'pre-commit run --all-files' locally and commit the changes."
+      echo "❌ Pre-commit made changes, but automatic commits are disabled for this event."
+      echo "Please run 'pre-commit run --all-files' locally and commit the changes."
       exit 1
