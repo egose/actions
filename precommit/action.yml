@@ -1,5 +1,6 @@
 name: Run and Handle Pre-Commit
 description: Run pre-commit hooks, commit changes if needed, or fail the build.
+
 inputs:
   config:
     description: Path to pre-commit configuration file
@@ -30,6 +31,7 @@ runs:
     shell: bash
     run: |
       pre-commit run --config="${{ inputs.config }}" --color=always --show-diff-on-failure --all-files || true
+
       if ! git diff --exit-code; then
         echo "pre_commit_made_changes=true" >> $GITHUB_OUTPUT
         echo "Pre-commit made changes, committing and pushing..."
