@@ -6,11 +6,11 @@ inputs:
     description: Path to pre-commit configuration file
     required: false
     default: .pre-commit-config.yaml
-  commit_on_pr:
+  commit-on-pr:
     description: Commit and push changes when running on pull_request
     required: false
     default: 'true'
-  commit_on_push:
+  commit-on-push:
     description: Commit and push changes when running on push
     required: false
     default: 'false'
@@ -41,7 +41,7 @@ runs:
       fi
 
   - name: Commit & Push Pre-Commit Fixes
-    if: steps.precommit.outputs.pre_commit_made_changes == 'true' && ( (github.event_name == 'pull_request' && inputs.commit_on_pr == 'true') || (github.event_name == 'push' && inputs.commit_on_push == 'true') )
+    if: steps.precommit.outputs.pre_commit_made_changes == 'true' && ( (github.event_name == 'pull_request' && inputs.commit-on-pr == 'true') || (github.event_name == 'push' && inputs.commit-on-push == 'true') )
     shell: bash
     env:
       HEAD_REF: ${{ github.head_ref || github.ref_name }}
@@ -54,7 +54,7 @@ runs:
       git push origin "$HEAD_REF"
 
   - name: Fail if Pre-Commit Changes and Commit Not Allowed
-    if: steps.precommit.outputs.pre_commit_made_changes == 'true' && ( (github.event_name == 'push' && inputs.commit_on_push != 'true') || (github.event_name == 'pull_request' && inputs.commit_on_pr != 'true') )
+    if: steps.precommit.outputs.pre_commit_made_changes == 'true' && ( (github.event_name == 'push' && inputs.commit-on-push != 'true') || (github.event_name == 'pull_request' && inputs.commit-on-pr != 'true') )
     shell: bash
     run: |
       echo "❌ Pre-commit made changes, but automatic commits are disabled for this event."
