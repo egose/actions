@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: hmarr/debug-action@v2
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
 
     - name: Setup Tools
       uses: ./asdf-tools
@@ -27,7 +27,7 @@ jobs:
   commitlint:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0
     - uses: wagoid/commitlint-github-action@v6
