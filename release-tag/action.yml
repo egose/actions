@@ -5,9 +5,6 @@ inputs:
     description: Tag Version (e.g. 1.2.3). Leave empty to auto-determine.
     required: false
     default: ''
-  ssh-key:
-    description: SSH Key for repository checkout
-    required: true
   github-token:
     description: GitHub Token for PR creation
     required: true
@@ -27,13 +24,6 @@ runs:
         echo "::error::This workflow must be run on a branch, not a tag."
         exit 1
       fi
-
-  - name: Checkout Repository
-    uses: actions/checkout@v6.0.1
-    with:
-      ssh-key: ${{ inputs.ssh-key }}
-      fetch-depth: 0
-      fetch-tags: true
 
   - name: Determine Next Tag Version
     id: new-tag

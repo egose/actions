@@ -44,11 +44,17 @@ jobs:
       issues: write
 
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6.0.1
+        with:
+          ssh-key: ${{ secrets.SSH_KEY }}
+          fetch-depth: 0
+          fetch-tags: true
+
       - name: Create Release Tag
         uses: egose/actions/release-tag@main
         with:
           tag: ${{ github.event.inputs.tag }}
-          ssh-key: ${{ secrets.RELEASE_SSH_KEY }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
@@ -61,7 +67,6 @@ jobs:
 | Input          | Description                                                                                | Required | Default        |
 | -------------- | ------------------------------------------------------------------------------------------ | -------- | -------------- |
 | `tag`          | Manually specify a version (e.g., `1.2.3`). If empty, it auto-determines based on commits. | No       | `""`           |
-| `ssh-key`      | SSH Private Key used to push the tag and changelog branch.                                 | **Yes**  | N/A            |
 | `github-token` | The `GITHUB_TOKEN` or a PAT to create the Pull Request.                                    | **Yes**  | `github.token` |
 
 ---
