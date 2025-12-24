@@ -1,0 +1,137 @@
+name: Create Release Tag
+description: Determines the next version and creates a release candidate PR
+inputs:
+  tag:
+    description: Tag Version (e.g. 1.2.3). Leave empty to auto-determine.
+    required: false
+    default: ''
+  ssh-key:
+    description: SSH Key for repository checkout
+    required: true
+  github-token:
+    description: GitHub Token for PR creation
+    required: true
+
+runs:
+  using: composite
+  steps:
+  - name: Fail on tags (Workflow must run on a branch)
+    shell: bash
+    run: |
+      echo "Current Ref: ${{ github.ref }}"
+      if [[ ! "${{ github.ref }}" =~ ^refs/heads/ ]]; then
+        echo "::error::This workflow must be run on a branch, not a tag."
+        exit 1
+      fi
+
+  - name: Checkout Repository
+    uses: actions/checkout@v4
+    with:
+      ssh-key: ${{ inputs.ssh-key }}
+      fetch-depth: 0
+      fetch-tags: true
+
+  - name: Determine Next Tag Version
+    id: new-tag
+    shell: bash
+    run: |
+      NEXT_VERSION=""
+      INPUT_TAG="${{ inputs.tag }}"
+
+      if [ -n "$INPUT_TAG" ]; then
+        if ! echo "$INPUT_TAG" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+          echo "::error::Provided tag '$INPUT_TAG' does not follow semantic versioning"
+          exit 1
+        fi
+        NEXT_VERSION="${INPUT_TAG//v}"
+      else
+        LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        if [ -z "$LAST_TAG" ]; then
+          echo "::error::No previous tag found and no tag input provided."
+          exit 1
+        fi
+
+        if ! [[ $LAST_TAG =~ v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+           echo "::error::Last tag '$LAST_TAG' does not follow 'vX.Y.Z' format."
+           exit 1
+        fi
+
+        MAJOR="${BASH_REMATCH[1]}"
+        MINOR="${BASH_REMATCH[2]}"
+        PATCH="${BASH_REMATCH[3]}"
+        COMMIT_MESSAGES=$(git log ${LAST_TAG}..HEAD --pretty=format:%B)
+
+        if echo "$COMMIT_MESSAGES" | grep -qE '(BREAKING CHANGE:|^feat\([^\)]+\)!:|^fix\([^\)]+\)!:|!:)'; then
+            BUMP="major"
+        elif echo "$COMMIT_MESSAGES" | grep -qE '^feat(\(.+\))?:'; then
+            BUMP="minor"
+        else
+            BUMP="patch"
+        fi
+
+        case "$BUMP" in
+          major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+          minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+          patch) PATCH=$((PATCH + 1)) ;;
+        esac
+        NEXT_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+      fi
+      echo "tag=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
+
+  - name: Setup Tools
+    uses: ./.github/actions/setup-tools
+
+  - name: Setup NPM Packages
+    uses: ./.github/actions/setup-npm
+
+  - name: Create Tag and Changelog with release-it
+    id: release-it
+    shell: bash
+    run: |
+      TAG_VERSION="v${{ steps.new-tag.outputs.tag }}"
+      git config user.name "github-actions[bot]"
+      git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      branch="changelog/${{ steps.new-tag.outputs.tag }}"
+      BASE_BRANCH="${{ github.ref_name }}"
+
+      git push origin --delete "$branch" || true
+      git branch -D "$branch" || true
+      git checkout -b "$branch"
+      git push --set-upstream origin "$branch"
+
+      ./node_modules/.bin/release-it ${{ steps.new-tag.outputs.tag }} --ci
+
+      pr_title="chore(release): release candidate $TAG_VERSION"
+      pr_body=$(git tag -l --format='%(contents)' "$TAG_VERSION")
+
+      echo "head_branch=$branch" >> "$GITHUB_OUTPUT"
+      echo "base_branch=$BASE_BRANCH" >> "$GITHUB_OUTPUT"
+      echo "version=$TAG_VERSION" >> "$GITHUB_OUTPUT"
+      echo "pr_title=$pr_title" >> "$GITHUB_OUTPUT"
+
+      EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+      echo "pr_body<<$EOF" >> "$GITHUB_OUTPUT"
+      echo "$pr_body" >> "$GITHUB_OUTPUT"
+      echo "$EOF" >> "$GITHUB_OUTPUT"
+
+  - name: Create Pull Request
+    uses: actions/github-script@v7
+    with:
+      github-token: ${{ inputs.github-token }}
+      script: |
+        const { repo, owner } = context.repo;
+        const pr = await github.rest.pulls.create({
+          owner,
+          repo,
+          head: `${{ steps.release-it.outputs.head_branch }}`,
+          base: `${{ steps.release-it.outputs.base_branch }}`,
+          title: `${{ steps.release-it.outputs.pr_title }}`,
+          body: `### Release Candidate Details\n\n${{ steps.release-it.outputs.pr_body }}\n\n---\n\n> ℹ️ **This PR was automatically generated.**`
+        });
+        await github.rest.issues.addLabels({
+          owner,
+          repo,
+          issue_number: pr.data.number,
+          labels: ['changelog', 'release-candidate', `${{ steps.release-it.outputs.version }}`]
+        });
