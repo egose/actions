@@ -29,6 +29,9 @@ inputs:
   docker-args:
     description: List of build args as key-value pair attributes
     required: false
+  docker-outputs:
+    description: List of output destinations
+    required: false
   trivy:
     description: Run Trivy vulnerability scanner
     required: false
@@ -116,6 +119,7 @@ runs:
         BUILD_TIMESTAMP=${{ env.BUILD_TIMESTAMP }}
         ${{ inputs.docker-args }}
       labels: ${{ steps.meta.outputs.labels }}
+      outputs: ${{ inputs.docker-outputs }}
       cache-from: type=local,src=${{ env.DOCKER_LAYERS_PATH }}
       cache-to: type=local,dest=${{ env.DOCKER_LAYERS_PATH }}-new
 
