@@ -1,4 +1,5 @@
 name: Install Packages with Yarn
+description: Install packages with Yarn based on the package.json file(s) located in the specified directories
 
 inputs:
   paths:
@@ -10,7 +11,7 @@ runs:
   using: composite
   steps:
   - name: Cache tools
-      # see https://github.com/actions/cache/commit/69d9d449aced6a2ede0bc19182fadc3a0a42d2b0
+      # see https://github.com/actions/cache/commits/main/
     uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
     with:
       path: |

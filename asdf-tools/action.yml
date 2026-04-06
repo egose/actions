@@ -1,4 +1,5 @@
 name: Install asdf tools
+description: Install asdf tools based on the .tool-versions file and additional plugins
 
 inputs:
   version:
