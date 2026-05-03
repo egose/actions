@@ -1,3 +1,5 @@
 python 3.14.4
-semtag 0.1.1
-act 0.2.87
+act 0.2.88
+actionlint 1.7.12
+shellcheck 0.11.0
+shfmt 3.13.1
