@@ -1,33 +1,40 @@
-## Overview
+# Docker Build Push
 
-This GitHub Action automates building Docker container images and pushing them to a container registry. It combines the functionality of the following existing GitHub actions:
+Builds a Docker image, pushes it to a registry, and exposes the generated Docker metadata as action outputs.
 
-- [actions/cache](https://github.com/actions/cache)
-- [docker/login-action](https://github.com/docker/login-action)
-- [docker/metadata-action](https://github.com/docker/metadata-action)
-- [docker/setup-buildx-action](https://github.com/docker/setup-buildx-action)
-- [docker/build-push-action](https://github.com/docker/build-push-action)
-- [aquasecurity/trivy-action](https://github.com/aquasecurity/trivy-action)
-- [github/codeql-action/upload-sarif](https://github.com/github/codeql-action)
+## What It Does
+
+- Logs in to the target container registry.
+- Generates tags and labels with `docker/metadata-action`.
+- Builds and pushes the image with `docker/build-push-action`.
+- Reuses a local Buildx layer cache between runs.
+- Optionally runs Trivy and uploads SARIF results to the GitHub Security tab.
 
 ## Usage
 
 ### Basic
 
-By default, it uses `.tool-versions` file located in the root directory to install asdf plugins.
-
 ```yaml
-name: Basic
+name: Publish Image
 
-on: push
+on:
+  push:
+    tags:
+      - 'v*.*.*'
 
 jobs:
-  tools:
-    runs-on: ubuntu-22.04
+  docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+
     steps:
-      - uses: actions/checkout@v3
-      - name: Build and Push
-        uses: egose/actions/docker-build-push@v0.2.9
+      - uses: actions/checkout@v4
+
+      - name: Build and push image
+        uses: egose/actions/docker-build-push@main
         with:
           registry-url: ghcr.io
           registry-username: ${{ github.actor }}
@@ -36,37 +43,57 @@ jobs:
           metadata-tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+            type=sha
+```
+
+### Run Trivy After Pushing
+
+```yaml
+- name: Build, push, and scan image
+  uses: egose/actions/docker-build-push@main
+  with:
+    registry-url: ghcr.io
+    registry-username: ${{ github.actor }}
+    registry-password: ${{ secrets.GITHUB_TOKEN }}
+    image-name: egose/myapp
+    metadata-tags: |
+      type=ref,event=branch
+      type=sha
+    trivy: 'true'
 ```
 
 ## Inputs
 
-The following inputs can be used as `step.with` keys:
-
-| Name                | Type       | Required | Description                                      |
-| ------------------- | ---------- | -------- | ------------------------------------------------ |
-| `registry-url`      | String     | Yes      | Docker container registry server URL             |
-| `registry-username` | String     | Yes      | Docker container registry username               |
-| `registry-password` | String     | Yes      | Docker container registry password               |
-| `image-name`        | String     | Yes      | Docker image name                                |
-| `metadata-tags`     | List       | Yes      | List of tags as key-value pair attributes        |
-| `metadata-labels`   | List       | No       | List of labels as key-value pair attributes      |
-| `docker-context`    | String     | No       | Docker build's context                           |
-| `docker-file`       | String     | No       | Path to the Dockerfile                           |
-| `docker-args`       | StrListing | No       | List of build args as key-value pair attributes  |
-| `trivy`             | Bool       | No       | If `true`, it runs `Trivy` vulnerability scanner |
+| Name | Required | Default | Description |
+| --- | --- | --- | --- |
+| `registry-url` | Yes |  | Container registry hostname, for example `ghcr.io`. |
+| `registry-username` | Yes |  | Username used to log in to the registry. |
+| `registry-password` | Yes |  | Password or token used to log in to the registry. |
+| `image-name` | Yes |  | Image name without the registry prefix. |
+| `metadata-tags` | Yes |  | Newline-separated tag rules in `docker/metadata-action` format. |
+| `metadata-labels` | No |  | Newline-separated label rules in `docker/metadata-action` format. |
+| `docker-context` | No |  | Build context passed to `docker/build-push-action`. |
+| `docker-file` | No |  | Path to the Dockerfile. |
+| `docker-args` | No |  | Additional build args. `BUILD_TIMESTAMP` is always injected automatically. |
+| `docker-outputs` | No |  | Output destinations passed through to `docker/build-push-action`. |
+| `trivy` | No | `"false"` | Runs Trivy, converts the report to SARIF, and uploads it when set to `true`. |
 
 ## Outputs
 
-The following outputs are available:
+| Name | Description |
+| --- | --- |
+| `docker-version` | Generated Docker image version reported by the metadata step. |
+| `docker-tags` | Generated image tags. |
+| `docker-labels` | Generated image labels. |
+| `docker-annotations` | Generated [BuildKit annotations](https://github.com/moby/buildkit/blob/master/docs/annotations.md). |
+| `metadata-json` | Raw JSON output from `docker/metadata-action`. |
+| `bake-file-tags` | Bake definition file containing generated tags. |
+| `bake-file-labels` | Bake definition file containing generated labels. |
+| `bake-file-annotations` | Bake definition file containing generated annotations. |
+| `bake-file` | Bake definition file containing generated tags, labels, and annotations. |
 
-| Name                    | Type   | Description                                                                                                                                                     |
-| ----------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `docker-version`        | String | Docker image version                                                                                                                                            |
-| `docker-tags`           | String | Docker tags                                                                                                                                                     |
-| `docker-labels`         | String | Docker labels                                                                                                                                                   |
-| `docker-annotations`    | String | [Annotations](https://github.com/moby/buildkit/blob/master/docs/annotations.md)                                                                                 |
-| `metadata-json`         | String | JSON output of tags and labels                                                                                                                                  |
-| `bake-file-tags`        | File   | [Bake file definition](https://docs.docker.com/build/bake/reference/) path with tags                                                                            |
-| `bake-file-labels`      | File   | [Bake file definition](https://docs.docker.com/build/bake/reference/) path with labels                                                                          |
-| `bake-file-annotations` | File   | [Bake file definition](https://docs.docker.com/build/bake/reference/) path with [annotations](https://github.com/moby/buildkit/blob/master/docs/annotations.md) |
+## Notes
+
+- This action always pushes the built image. There is no build-only mode.
+- The image reference is constructed as `${{ inputs.registry-url }}/${{ inputs.image-name }}`.
+- The Trivy steps require `security-events: write` permission if you want SARIF uploaded to GitHub code scanning.

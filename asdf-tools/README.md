@@ -1,73 +1,64 @@
-## About
+# Install asdf Tools
 
-GitHub Action to install asdf tools.
+Installs `asdf`, restores the `~/.asdf` cache, and installs the tool versions defined in a `.tool-versions` file.
+
+## What It Does
+
+- Downloads and installs the `asdf` CLI on Linux runners.
+- Restores and updates the `~/.asdf` directory with `actions/cache`.
+- Adds plugins listed in `.tool-versions`.
+- Optionally adds extra plugins from the `plugins` input.
+- Installs the requested tool versions and runs `asdf reshim`.
 
 ## Usage
 
 ### Basic
 
-By default, it uses `.tool-versions` file located in the root directory to install asdf plugins.
-
 ```yaml
-name: Basic
+name: Setup Tools
 
 on: push
 
 jobs:
   tools:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Setup Tools
-        uses: egose/actions/asdf-tools@v0.2.9
+      - uses: actions/checkout@v4
+
+      - name: Install tools from .tool-versions
+        uses: egose/actions/asdf-tools@main
 ```
 
-### Custom Context Input
-
-You have the option to specify the location of the `.tool-versions` file using the `context` input.
+### Use a Different `.tool-versions` Directory
 
 ```yaml
-name: Custom Context Input
-
-on: push
-
-jobs:
-  tools:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup Tools
-        uses: egose/actions/asdf-tools@v0.2.9
-        with:
-          context: ./app
+- name: Install tools from app/.tool-versions
+  uses: egose/actions/asdf-tools@main
+  with:
+    context: ./app
 ```
 
-### Custom Context Input with Additional Plugins
-
-You can also specify the additional plugins using the `plugins` input.
+### Add Extra Plugin Sources
 
 ```yaml
-name: Custom Context Input with Additional Plugins
-
-on: push
-
-jobs:
-  tools:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup Tools
-        uses: egose/actions/asdf-tools@v0.2.9
-        with:
-          plugins: |
-            docker-compose=https://github.com/virtualstaticvoid/asdf-docker-compose.git
+- name: Install tools with extra plugins
+  uses: egose/actions/asdf-tools@main
+  with:
+    plugins: |
+      docker-compose=https://github.com/virtualstaticvoid/asdf-docker-compose.git
+      poetry=https://github.com/asdf-community/asdf-poetry.git
 ```
 
 ## Inputs
 
-The following inputs can be used as `step.with` keys:
+| Name | Required | Default | Description |
+| --- | --- | --- | --- |
+| `version` | No | `v0.18.0` | Version of the `asdf` binary to install. |
+| `plugins` | No | `""` | Newline-separated list of extra plugins in `<plugin>=<url>` format. |
+| `context` | No | `.` | Directory that contains the `.tool-versions` file. |
 
-| Name      | Type   | Required | Default | Description                                       |
-| --------- | ------ | -------- | ------- | ------------------------------------------------- |
-| `plugins` | String | No       |         | List of additional plugins (e.g., <plugin>=<url>) |
-| `context` | String | No       | .       | Directory of the file .tool-versions located      |
+## Notes
+
+- This action expects a `.tool-versions` file to exist in the selected `context` directory.
+- The download URL is Linux-specific, so this action is intended for Linux runners.
+- Cache invalidation is based on `hashFiles('**/.tool-versions')`, so updates to any `.tool-versions` file in the repository will refresh the cache key.

@@ -1,73 +1,78 @@
-## About
+# Run and Handle Pre-Commit
 
-GitHub Action to install asdf tools.
+Runs `pre-commit` for the repository, optionally commits any hook-generated changes, and fails the job when changes are left uncommitted.
+
+## What It Does
+
+- Restores the `~/.cache/pre-commit` cache.
+- Runs `pre-commit run --all-files` against the configured file.
+- Detects whether hooks changed tracked files.
+- Optionally commits and pushes those changes on `pull_request` and/or `push` events.
+- Fails the workflow if changes were made but automatic commits are disabled.
 
 ## Usage
 
 ### Basic
 
-By default, it uses `.tool-versions` file located in the root directory to install asdf plugins.
-
 ```yaml
-name: Basic
+name: Pre-Commit
 
-on: push
+on:
+  pull_request:
+  push:
 
 jobs:
-  tools:
-    runs-on: ubuntu-22.04
+  precommit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
-      - uses: actions/checkout@v3
-      - name: Setup Tools
-        uses: egose/actions/asdf-tools@v0.2.9
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Run pre-commit action
+        uses: egose/actions/precommit@main
 ```
 
-### Custom Context Input
-
-You have the option to specify the location of the `.tool-versions` file using the `context` input.
+### Disable Auto-Commit on Push
 
 ```yaml
-name: Custom Context Input
-
-on: push
-
-jobs:
-  tools:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup Tools
-        uses: egose/actions/asdf-tools@v0.2.9
-        with:
-          context: ./app
+- name: Run pre-commit without push auto-commit
+  uses: egose/actions/precommit@main
+  with:
+    commit-on-pr: 'true'
+    commit-on-push: 'false'
 ```
 
-### Custom Context Input with Additional Plugins
-
-You can also specify the additional plugins using the `plugins` input.
+### Use a Custom Config File
 
 ```yaml
-name: Custom Context Input with Additional Plugins
-
-on: push
-
-jobs:
-  tools:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup Tools
-        uses: egose/actions/asdf-tools@v0.2.9
-        with:
-          plugins: |
-            docker-compose=https://github.com/virtualstaticvoid/asdf-docker-compose.git
+- name: Run pre-commit with custom config
+  uses: egose/actions/precommit@main
+  with:
+    config: .github/pre-commit-config.yaml
 ```
 
 ## Inputs
 
-The following inputs can be used as `step.with` keys:
+| Name | Required | Default | Description |
+| --- | --- | --- | --- |
+| `config` | No | `.pre-commit-config.yaml` | Path to the pre-commit configuration file. |
+| `commit-on-pr` | No | `"true"` | Commit and push hook changes when the workflow runs on `pull_request`. |
+| `commit-on-push` | No | `"false"` | Commit and push hook changes when the workflow runs on `push`. |
 
-| Name      | Type   | Required | Default | Description                                       |
-| --------- | ------ | -------- | ------- | ------------------------------------------------- |
-| `plugins` | String | No       |         | List of additional plugins (e.g., <plugin>=<url>) |
-| `context` | String | No       | .       | Directory of the file .tool-versions located      |
+## Notes
+
+- This action does not install `pre-commit`; your workflow must do that before calling it.
+- Automatic push-back requires repository write permissions and a checkout that can push to the current branch.
+- On pull requests from forks, the push step may not be allowed by repository permissions or token restrictions.
+- When automatic commit is disabled for the current event, the action fails intentionally if hooks modified files.
