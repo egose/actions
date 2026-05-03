@@ -1,0 +1,70 @@
+name: Test action docker-build-push
+
+on:
+  pull_request:
+    paths:
+    - .github/workflows/test-docker-build-push.yml
+    - docker-build-push/**
+    - action.yml
+    - tests/fixtures/docker-build-push/**
+  push:
+    branches:
+    - main
+    paths:
+    - .github/workflows/test-docker-build-push.yml
+    - docker-build-push/**
+    - action.yml
+    - tests/fixtures/docker-build-push/**
+  workflow_dispatch:
+
+jobs:
+  docker-build-push-test:
+    runs-on: ubuntu-24.04
+    services:
+      registry:
+        image: registry:2
+        ports:
+        - 5000:5000
+
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+    - name: Wait for local registry
+      shell: bash
+      run: |
+        for _ in {1..30}; do
+          if curl -fsS http://127.0.0.1:5000/v2/ >/dev/null; then
+            exit 0
+          fi
+          sleep 1
+        done
+        echo "Local registry did not become ready in time"
+        exit 1
+
+    - name: Build and push fixture image
+      id: build
+      uses: ./docker-build-push
+      with:
+        registry-url: localhost:5000
+        registry-username: test
+        registry-password: test
+        image-name: egose-actions/docker-build-push
+        metadata-tags: |
+          type=raw,value=test
+        docker-context: ./tests/fixtures/docker-build-push
+        docker-file: ./tests/fixtures/docker-build-push/Dockerfile
+
+    - name: Verify action outputs
+      shell: bash
+      env:
+        DOCKER_TAGS: ${{ steps.build.outputs.docker-tags }}
+        METADATA_JSON: ${{ steps.build.outputs.metadata-json }}
+      run: |
+        [[ "$DOCKER_TAGS" == *"localhost:5000/egose-actions/docker-build-push:test"* ]]
+        [[ -n "$METADATA_JSON" ]]
+
+    - name: Verify image exists in registry
+      shell: bash
+      run: |
+        curl -fsS http://127.0.0.1:5000/v2/_catalog | grep -q 'egose-actions/docker-build-push'
+        curl -fsS http://127.0.0.1:5000/v2/egose-actions/docker-build-push/tags/list | grep -q '"test"'

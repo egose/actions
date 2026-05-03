@@ -1,12 +1,22 @@
 name: Test action asdf-tools
 on:
+  pull_request:
+    paths:
+    - .github/workflows/test-asdf-tools.yml
+    - asdf-tools/**
+    - tests/fixtures/asdf-tools/**
   push:
     branches:
-    - __noop
+    - main
+    paths:
+    - .github/workflows/test-asdf-tools.yml
+    - asdf-tools/**
+    - tests/fixtures/asdf-tools/**
+  workflow_dispatch:
 
 jobs:
   asdf-tools-test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
     - uses: hmarr/debug-action@f7318c783045ac39ed9bb497e22ce835fdafbfe6
     - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
@@ -14,7 +24,7 @@ jobs:
     - name: Install asdf tools in another directory
       uses: ./asdf-tools
       with:
-        context: .github/workflows
+        context: tests/fixtures/asdf-tools
         plugins: |
           mongodb=https://github.com/junminahn/asdf-mongodb.git
           docker-compose=https://github.com/virtualstaticvoid/asdf-docker-compose.git
@@ -22,4 +32,4 @@ jobs:
     - name: Check Nodejs version via Yarn
       run: |
         yarn node -v | grep -q "v22.14.0"
-      working-directory: .github/workflows
+      working-directory: tests/fixtures/asdf-tools

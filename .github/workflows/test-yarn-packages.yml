@@ -1,0 +1,42 @@
+name: Test action yarn-packages
+
+on:
+  pull_request:
+    paths:
+    - .github/workflows/test-yarn-packages.yml
+    - yarn-packages/**
+    - tests/fixtures/yarn-packages/**
+  push:
+    branches:
+    - main
+    paths:
+    - .github/workflows/test-yarn-packages.yml
+    - yarn-packages/**
+    - tests/fixtures/yarn-packages/**
+  workflow_dispatch:
+
+jobs:
+  yarn-packages-test:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Enable Corepack
+      run: corepack enable
+
+    - name: Install package fixtures
+      uses: ./yarn-packages
+      with:
+        paths: |
+          tests/fixtures/yarn-packages/app-one
+          tests/fixtures/yarn-packages/app-two
+
+    - name: Verify yarn install outputs
+      shell: bash
+      run: |
+        test -f tests/fixtures/yarn-packages/app-one/yarn.lock
+        test -f tests/fixtures/yarn-packages/app-two/yarn.lock
