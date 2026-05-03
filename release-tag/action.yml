@@ -97,6 +97,7 @@ runs:
       git push --set-upstream origin "$branch"
 
       ${{ inputs.release-it-path }} ${{ steps.new-tag.outputs.tag }} --ci
+      git push origin "$branch"
 
       pr_title="chore(release): release candidate $TAG_VERSION"
       pr_body=$(git tag -l --format='%(contents)' "$TAG_VERSION")
