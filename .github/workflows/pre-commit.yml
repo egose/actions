@@ -7,27 +7,18 @@ on:
 
 jobs:
   pre-commit:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-    - uses: hmarr/debug-action@v2
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
     - name: Setup Tools
-      uses: ./asdf-tools
+      uses: ./.github/actions/setup-tools
 
-    - uses: actions/setup-python@v6
-      with:
-        python-version: 3.x
+    - name: Setup NPM Packages
+      uses: ./.github/actions/setup-npm
 
     - name: Rerun Pre-Commit Hooks on CI
-      run: |
-        pip install -r requirements.txt
-        pre-commit run --all-files
-
-  commitlint:
-    runs-on: ubuntu-22.04
-    steps:
-    - uses: actions/checkout@v6
+      uses: ./precommit
       with:
-        fetch-depth: 0
-    - uses: wagoid/commitlint-github-action@v6
+        commit-on-pr: 'false'
+        commit-on-push: 'false'

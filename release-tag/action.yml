@@ -8,6 +8,14 @@ inputs:
   github-token:
     description: GitHub Token for PR creation
     required: true
+  auto-merge-pr:
+    description: Automatically merge the generated release PR
+    required: false
+    default: 'false'
+  delete-merged-branch:
+    description: Delete the generated changelog branch after the PR is merged
+    required: false
+    default: 'false'
   release-it-path:
     description: Path to the release-it binary
     required: false
@@ -89,6 +97,7 @@ runs:
       git push --set-upstream origin "$branch"
 
       ${{ inputs.release-it-path }} ${{ steps.new-tag.outputs.tag }} --ci
+      git push origin "$branch"
 
       pr_title="chore(release): release candidate $TAG_VERSION"
       pr_body=$(git tag -l --format='%(contents)' "$TAG_VERSION")
@@ -109,10 +118,13 @@ runs:
       github-token: ${{ inputs.github-token }}
       script: |
         const { repo, owner } = context.repo;
+        const autoMergePr = `${{ inputs.auto-merge-pr }}` === 'true';
+        const deleteMergedBranch = `${{ inputs.delete-merged-branch }}` === 'true';
+        const headBranch = `${{ steps.release-it.outputs.head_branch }}`;
         const pr = await github.rest.pulls.create({
           owner,
           repo,
-          head: `${{ steps.release-it.outputs.head_branch }}`,
+          head: headBranch,
           base: `${{ steps.release-it.outputs.base_branch }}`,
           title: `${{ steps.release-it.outputs.pr_title }}`,
           body: `### Release Candidate Details\n\n${{ steps.release-it.outputs.pr_body }}\n\n---\n\n> ℹ️ **This PR was automatically generated.**`
@@ -123,3 +135,20 @@ runs:
           issue_number: pr.data.number,
           labels: ['changelog', 'release-candidate', `${{ steps.release-it.outputs.version }}`]
         });
+
+        if (autoMergePr) {
+          await github.rest.pulls.merge({
+            owner,
+            repo,
+            pull_number: pr.data.number,
+            merge_method: 'merge'
+          });
+
+          if (deleteMergedBranch) {
+            await github.rest.git.deleteRef({
+              owner,
+              repo,
+              ref: `heads/${headBranch}`
+            });
+          }
+        }

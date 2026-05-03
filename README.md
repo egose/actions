@@ -1,11 +1,21 @@
 # GitHub Actions
 
-## asdf-tools
+This repository contains several reusable composite GitHub Actions.
 
-- GitHub Action to install asdf tools.
-- Please refer to [asdf-tools](./asdf-tools/README.md).
+## Modules
 
-## docker-build-push
+| Module | Purpose |
+| --- | --- |
+| [`asdf-tools`](./asdf-tools/README.md) | Installs `asdf` and tool versions from `.tool-versions`. |
+| [`docker-build-push`](./docker-build-push/README.md) | Builds and pushes a Docker image, with optional Trivy scanning. |
+| [`precommit`](./precommit/README.md) | Runs `pre-commit` and can commit hook-generated changes. |
+| [`release-tag`](./release-tag/README.md) | Generates release candidate PRs from semantic versioning rules. |
+| [`yarn-packages`](./yarn-packages/README.md) | Runs `yarn install` across one or more package directories. |
 
-- GitHub Action to build docker container image and push to the container registry.
-- Please refer to [docker-build-push](./docker-build-push/README.md).
+## Root Action
+
+The root `action.yml` is a compatibility wrapper around [`docker-build-push`](./docker-build-push/README.md). New usage should prefer the explicit module path:
+
+```yaml
+uses: egose/actions/docker-build-push@main
+```

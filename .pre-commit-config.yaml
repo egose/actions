@@ -1,26 +1,43 @@
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v5.0.0
+  rev: v6.0.0
   hooks:
   - id: check-added-large-files
   - id: check-case-conflict
   - id: check-executables-have-shebangs
     files: \.sh
   - id: check-json
-  - id: check-merge-conflict
-  - id: check-shebang-scripts-are-executable
-  - id: check-symlinks
   - id: check-vcs-permalinks
-  - id: check-xml
   - id: check-yaml
-  - id: detect-private-key
+  - id: check-ast
   - id: end-of-file-fixer
-  - id: fix-byte-order-marker
-  - id: forbid-submodules
   - id: trailing-whitespace
 - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-  rev: v2.14.0
+  rev: v2.16.0
   hooks:
   - id: pretty-format-yaml
     args: [--autofix, --indent, '2']
+- repo: local
+  hooks:
+  - id: actionlint
+    name: actionlint
+    entry: actionlint
+    language: system
+    files: (^\.github/workflows/.*\.ya?ml$)|(^action\.yml$)|(.*/action\.yml$)
+    pass_filenames: false
+  - id: commitlint
+    name: commitlint
+    entry: .bin/commitlint.sh
+    language: script
+    verbose: true
+    pass_filenames: false
+    stages: [commit-msg]
+
 default_stages: [pre-commit]
+exclude: |
+  (?x)^(
+    CHANGELOG\.md |
+    (.*/)?package-lock\.json |
+    (.*/)?yarn\.lock |
+    (.*/)?pnpm-lock\.yaml
+  )$

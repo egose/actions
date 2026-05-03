@@ -1,0 +1,38 @@
+{
+  "name": "actions",
+  "private": true,
+  "version": "0.3.0",
+  "description": "Reusable composite GitHub Actions for Egose repositories.",
+  "homepage": "https://github.com/egose/actions",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/egose/actions.git"
+  },
+  "bugs": {
+    "url": "https://github.com/egose/actions/issues"
+  },
+  "keywords": [
+    "github-actions",
+    "composite-actions",
+    "ci",
+    "automation"
+  ],
+  "author": "Junmin Dev",
+  "license": "Apache-2.0",
+  "scripts": {
+    "actionlint": "actionlint",
+    "precommit": "pre-commit run --all-files",
+    "lint": "npm run actionlint && npm run precommit",
+    "release": "release-it",
+    "changelog": "node changelog.mjs"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.5.3",
+    "@commitlint/config-conventional": "^20.5.3",
+    "@commitlint/format": "^20.5.0",
+    "@release-it/bumper": "^7.0.5",
+    "conventional-changelog": "^7.2.0",
+    "conventional-changelog-conventionalcommits": "^9.3.1",
+    "release-it": "^20.0.1"
+  }
+}

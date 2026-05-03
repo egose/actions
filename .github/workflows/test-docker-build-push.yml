@@ -1,0 +1,70 @@
+name: Test action docker-build-push
+
+on:
+  pull_request:
+    paths:
+    - .github/workflows/test-docker-build-push.yml
+    - docker-build-push/**
+    - tests/fixtures/docker-build-push/**
+  push:
+    branches:
+    - main
+    paths:
+    - .github/workflows/test-docker-build-push.yml
+    - docker-build-push/**
+    - tests/fixtures/docker-build-push/**
+  workflow_dispatch:
+
+jobs:
+  docker-build-push-test:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+
+    env:
+      GITHUB_REGISTRY: ghcr.io
+      IMAGE_TAG: test-${{ github.run_id }}
+
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+    - name: Compute image name
+      id: image
+      shell: bash
+      run: |
+        echo "name=$(printf '%s' "${GITHUB_REPOSITORY_OWNER}/actions-docker-build-push-test" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+    - name: Build and push fixture image
+      id: build
+      uses: ./docker-build-push
+      with:
+        registry-url: ${{ env.GITHUB_REGISTRY }}
+        registry-username: ${{ github.actor }}
+        registry-password: ${{ secrets.GITHUB_TOKEN }}
+        image-name: ${{ steps.image.outputs.name }}
+        metadata-tags: |
+          type=raw,value=${{ env.IMAGE_TAG }}
+        docker-context: ./tests/fixtures/docker-build-push
+        docker-file: ./tests/fixtures/docker-build-push/Dockerfile
+        docker-outputs: type=image,push=true,compression=gzip,force-compression=true
+
+    - name: Verify action outputs
+      shell: bash
+      env:
+        FULL_IMAGE: ${{ env.GITHUB_REGISTRY }}/${{ steps.image.outputs.name }}
+        IMAGE_TAG: ${{ env.IMAGE_TAG }}
+        DOCKER_TAGS: ${{ steps.build.outputs.docker-tags }}
+        METADATA_JSON: ${{ steps.build.outputs.metadata-json }}
+      run: |
+        [[ "$DOCKER_TAGS" == *"$FULL_IMAGE:$IMAGE_TAG"* ]]
+        [[ -n "$METADATA_JSON" ]]
+
+    - name: Verify image can be pulled from GHCR
+      shell: bash
+      env:
+        FULL_IMAGE: ${{ env.GITHUB_REGISTRY }}/${{ steps.image.outputs.name }}
+        IMAGE_TAG: ${{ env.IMAGE_TAG }}
+      run: |
+        docker pull "$FULL_IMAGE:$IMAGE_TAG"

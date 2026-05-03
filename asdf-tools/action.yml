@@ -43,8 +43,8 @@ runs:
     run: |
       asdf --version
       echo "$PATH"
-      echo ${{ inputs.context }}
-      cd ${{ inputs.context }}
+      echo "${{ inputs.context }}"
+      cd "${{ inputs.context }}"
 
       plugins_str=$'${{ inputs.plugins }}'
       plugins=(${plugins_str//$'\n'/ })
@@ -58,7 +58,7 @@ runs:
         fi
 
         echo "➡️ ${keyurl[0]} ${keyurl[1]}..."
-        asdf plugin add ${keyurl[0]} ${keyurl[1]} || true
+        asdf plugin add "${keyurl[0]}" "${keyurl[1]}" || true
       done
 
       echo "✅ Adding main plugins..."
@@ -74,12 +74,12 @@ runs:
           version=$(echo "$line" | awk '{print $2}')
 
           echo "➡️ $tool $version..."
-          asdf install "$tool" "$version" || true
+          asdf install "$tool" "$version"
           asdf reshim "$tool"
         fi
       done < .tool-versions
 
       asdf reshim
-      asdf install || true
+      asdf install
       echo "🚀 tools installed successfully"
     shell: bash
