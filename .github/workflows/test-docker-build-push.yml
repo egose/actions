@@ -41,11 +41,17 @@ jobs:
         echo "Local registry did not become ready in time"
         exit 1
 
+    - name: Detect Docker host gateway
+      id: host-gateway
+      shell: bash
+      run: |
+        echo "address=$(docker network inspect bridge --format '{{(index .IPAM.Config 0).Gateway}}')" >> "$GITHUB_OUTPUT"
+
     - name: Build and push fixture image
       id: build
       uses: ./docker-build-push
       with:
-        registry-url: 127.0.0.1:5000
+        registry-url: ${{ steps.host-gateway.outputs.address }}:5000
         registry-username: test
         registry-password: test
         image-name: egose-actions/docker-build-push
@@ -57,10 +63,11 @@ jobs:
     - name: Verify action outputs
       shell: bash
       env:
+        REGISTRY_URL: ${{ steps.host-gateway.outputs.address }}:5000
         DOCKER_TAGS: ${{ steps.build.outputs.docker-tags }}
         METADATA_JSON: ${{ steps.build.outputs.metadata-json }}
       run: |
-        [[ "$DOCKER_TAGS" == *"127.0.0.1:5000/egose-actions/docker-build-push:test"* ]]
+        [[ "$DOCKER_TAGS" == *"$REGISTRY_URL/egose-actions/docker-build-push:test"* ]]
         [[ -n "$METADATA_JSON" ]]
 
     - name: Verify image exists in registry
