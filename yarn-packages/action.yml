@@ -11,7 +11,7 @@ runs:
   using: composite
   steps:
   - name: Cache tools
-      # see https://github.com/actions/cache/commits/main/
+    # see https://github.com/actions/cache/commits/main/
     uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
     with:
       path: |
@@ -20,7 +20,7 @@ runs:
 
   - name: Install Packages
     run: |
-      plugins_str=$'${{ inputs.paths }}'
+      paths_str=$'${{ inputs.paths }}'
       paths=(${paths_str//$'\n'/ })
       dir="$(pwd)"
 
