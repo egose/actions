@@ -47,6 +47,34 @@ jobs:
       run: |
         echo "address=$(docker network inspect bridge --format '{{(index .IPAM.Config 0).Gateway}}')" >> "$GITHUB_OUTPUT"
 
+    - name: Allow insecure local registry
+      shell: bash
+      env:
+        REGISTRY_HOST: ${{ steps.host-gateway.outputs.address }}:5000
+      run: |
+        sudo mkdir -p /etc/docker
+        sudo tee /etc/docker/daemon.json >/dev/null <<EOF
+        {
+          "insecure-registries": [
+            "127.0.0.1:5000",
+            "$REGISTRY_HOST"
+          ]
+        }
+        EOF
+        sudo systemctl restart docker
+
+    - name: Wait for local registry after Docker restart
+      shell: bash
+      run: |
+        for _ in {1..30}; do
+          if curl -fsS http://127.0.0.1:5000/v2/ >/dev/null; then
+            exit 0
+          fi
+          sleep 1
+        done
+        echo "Local registry did not become ready after Docker restart"
+        exit 1
+
     - name: Build and push fixture image
       id: build
       uses: ./docker-build-push
