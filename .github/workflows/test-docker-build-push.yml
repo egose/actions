@@ -5,7 +5,6 @@ on:
     paths:
     - .github/workflows/test-docker-build-push.yml
     - docker-build-push/**
-    - action.yml
     - tests/fixtures/docker-build-push/**
   push:
     branches:
@@ -13,93 +12,59 @@ on:
     paths:
     - .github/workflows/test-docker-build-push.yml
     - docker-build-push/**
-    - action.yml
     - tests/fixtures/docker-build-push/**
   workflow_dispatch:
 
 jobs:
   docker-build-push-test:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
-    services:
-      registry:
-        image: registry:2
-        ports:
-        - 5000:5000
+    permissions:
+      contents: read
+      packages: write
+
+    env:
+      GITHUB_REGISTRY: ghcr.io
+      IMAGE_TAG: test-${{ github.run_id }}
 
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
-    - name: Wait for local registry
+    - name: Compute image name
+      id: image
       shell: bash
       run: |
-        for _ in {1..30}; do
-          if curl -fsS http://127.0.0.1:5000/v2/ >/dev/null; then
-            exit 0
-          fi
-          sleep 1
-        done
-        echo "Local registry did not become ready in time"
-        exit 1
-
-    - name: Detect Docker host gateway
-      id: host-gateway
-      shell: bash
-      run: |
-        echo "address=$(docker network inspect bridge --format '{{(index .IPAM.Config 0).Gateway}}')" >> "$GITHUB_OUTPUT"
-
-    - name: Allow insecure local registry
-      shell: bash
-      env:
-        REGISTRY_HOST: ${{ steps.host-gateway.outputs.address }}:5000
-      run: |
-        sudo mkdir -p /etc/docker
-        sudo tee /etc/docker/daemon.json >/dev/null <<EOF
-        {
-          "insecure-registries": [
-            "127.0.0.1:5000",
-            "$REGISTRY_HOST"
-          ]
-        }
-        EOF
-        sudo systemctl restart docker
-
-    - name: Wait for local registry after Docker restart
-      shell: bash
-      run: |
-        for _ in {1..30}; do
-          if curl -fsS http://127.0.0.1:5000/v2/ >/dev/null; then
-            exit 0
-          fi
-          sleep 1
-        done
-        echo "Local registry did not become ready after Docker restart"
-        exit 1
+        echo "name=$(printf '%s' "${GITHUB_REPOSITORY_OWNER}/actions-docker-build-push-test" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
     - name: Build and push fixture image
       id: build
       uses: ./docker-build-push
       with:
-        registry-url: ${{ steps.host-gateway.outputs.address }}:5000
-        registry-username: test
-        registry-password: test
-        image-name: egose-actions/docker-build-push
+        registry-url: ${{ env.GITHUB_REGISTRY }}
+        registry-username: ${{ github.actor }}
+        registry-password: ${{ secrets.GITHUB_TOKEN }}
+        image-name: ${{ steps.image.outputs.name }}
         metadata-tags: |
-          type=raw,value=test
+          type=raw,value=${{ env.IMAGE_TAG }}
         docker-context: ./tests/fixtures/docker-build-push
         docker-file: ./tests/fixtures/docker-build-push/Dockerfile
+        docker-outputs: type=image,push=true,compression=gzip,force-compression=true
 
     - name: Verify action outputs
       shell: bash
       env:
-        REGISTRY_URL: ${{ steps.host-gateway.outputs.address }}:5000
+        FULL_IMAGE: ${{ env.GITHUB_REGISTRY }}/${{ steps.image.outputs.name }}
+        IMAGE_TAG: ${{ env.IMAGE_TAG }}
         DOCKER_TAGS: ${{ steps.build.outputs.docker-tags }}
         METADATA_JSON: ${{ steps.build.outputs.metadata-json }}
       run: |
-        [[ "$DOCKER_TAGS" == *"$REGISTRY_URL/egose-actions/docker-build-push:test"* ]]
+        [[ "$DOCKER_TAGS" == *"$FULL_IMAGE:$IMAGE_TAG"* ]]
         [[ -n "$METADATA_JSON" ]]
 
-    - name: Verify image exists in registry
+    - name: Verify image can be pulled from GHCR
       shell: bash
+      env:
+        FULL_IMAGE: ${{ env.GITHUB_REGISTRY }}/${{ steps.image.outputs.name }}
+        IMAGE_TAG: ${{ env.IMAGE_TAG }}
       run: |
-        curl -fsS http://127.0.0.1:5000/v2/_catalog | grep -q 'egose-actions/docker-build-push'
-        curl -fsS http://127.0.0.1:5000/v2/egose-actions/docker-build-push/tags/list | grep -q '"test"'
+        docker pull "$FULL_IMAGE:$IMAGE_TAG"
