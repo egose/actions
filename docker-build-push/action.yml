@@ -40,19 +40,19 @@ inputs:
 outputs:
   docker-version:
     description: Generated Docker image version
-    value: ${{ steps.meta.outputs.docker-version }}
+    value: ${{ steps.meta.outputs.version }}
   docker-tags:
     description: Generated Docker tags
-    value: ${{ steps.meta.outputs.docker-tags }}
+    value: ${{ steps.meta.outputs.tags }}
   docker-labels:
     description: Generated Docker labels
-    value: ${{ steps.meta.outputs.docker-labels }}
+    value: ${{ steps.meta.outputs.labels }}
   docker-annotations:
     description: Generated annotations
-    value: ${{ steps.meta.outputs.docker-annotations }}
+    value: ${{ steps.meta.outputs.annotations }}
   metadata-json:
     description: JSON output of tags and labels
-    value: ${{ steps.meta.outputs.metadata-json }}
+    value: ${{ steps.meta.outputs.json }}
   bake-file-tags:
     description: Bake definition file with tags
     value: ${{ steps.meta.outputs.bake-file-tags }}
