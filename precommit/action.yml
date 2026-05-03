@@ -30,7 +30,9 @@ runs:
     id: precommit
     shell: bash
     run: |
-      pre-commit run --config="${{ inputs.config }}" --color=always --show-diff-on-failure --all-files || true
+      pre_commit_exit_code=0
+      pre-commit run --config="${{ inputs.config }}" --color=always --show-diff-on-failure --all-files || pre_commit_exit_code=$?
+      echo "pre_commit_exit_code=$pre_commit_exit_code" >> $GITHUB_OUTPUT
 
       if ! git diff --exit-code; then
         echo "pre_commit_made_changes=true" >> $GITHUB_OUTPUT
@@ -49,9 +51,15 @@ runs:
       git config user.name "github-actions[bot]"
       git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
       git checkout "$HEAD_REF"
-      git add .
+      git add -u
       git commit -m "chore(pre-commit): apply automatic formatting and linting fixes"
       git push origin "$HEAD_REF"
+
+  - name: Verify Pre-Commit After Auto-Fix
+    if: steps.precommit.outputs.pre_commit_made_changes == 'true' && ( (github.event_name == 'pull_request' && inputs.commit-on-pr == 'true') || (github.event_name == 'push' && inputs.commit-on-push == 'true') )
+    shell: bash
+    run: |
+      pre-commit run --config="${{ inputs.config }}" --color=always --show-diff-on-failure --all-files
 
   - name: Fail if Pre-Commit Changes and Commit Not Allowed
     if: steps.precommit.outputs.pre_commit_made_changes == 'true' && ( (github.event_name == 'push' && inputs.commit-on-push != 'true') || (github.event_name == 'pull_request' && inputs.commit-on-pr != 'true') )
@@ -59,4 +67,11 @@ runs:
     run: |
       echo "❌ Pre-commit made changes, but automatic commits are disabled for this event."
       echo "Please run 'pre-commit run --all-files' locally and commit the changes."
+      exit 1
+
+  - name: Fail if Pre-Commit Hooks Failed
+    if: steps.precommit.outputs.pre_commit_exit_code != '0' && steps.precommit.outputs.pre_commit_made_changes != 'true'
+    shell: bash
+    run: |
+      echo "❌ Pre-commit hooks failed."
       exit 1
