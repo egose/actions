@@ -64,6 +64,8 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-merge-pr: ${{ github.event.inputs.auto-merge-pr }}
           delete-merged-branch: ${{ github.event.inputs.delete-merged-branch }}
+          git-user-name: release-bot
+          git-user-email: release-bot@example.com
           sign-commit: 'true'
           gpg-private-key: ${{ secrets.RELEASE_GPG_PRIVATE_KEY }}
           gpg-passphrase: ${{ secrets.RELEASE_GPG_PASSPHRASE }}
@@ -78,6 +80,8 @@ jobs:
 | `auto-merge-pr` | No | `"false"` | Merges the generated release PR immediately after creation when set to `true`. |
 | `delete-merged-branch` | No | `"false"` | Deletes the generated `changelog/*` branch after a successful auto-merge. |
 | `release-it-path` | No | `./node_modules/.bin/release-it` | Path to the `release-it` executable. |
+| `git-user-name` | No | `github-actions[bot]` | Git author name used for the release commit. |
+| `git-user-email` | No | `github-actions[bot]@users.noreply.github.com` | Git author email used for the release commit. |
 | `sign-commit` | No | `"false"` | Signs the release commit that `release-it` creates. |
 | `gpg-private-key` | No | `""` | ASCII-armored GPG private key to import before creating the release commit. |
 | `gpg-passphrase` | No | `""` | Passphrase for `gpg-private-key`, when the key is passphrase-protected. |
@@ -100,7 +104,8 @@ jobs:
 - When `sign-commit` is enabled, the action imports `gpg-private-key` if provided and then forces `release-it` to create its commit with `--gpg-sign`.
 - If `gpg-private-key` is omitted, the runner must already have a usable GPG secret key before this action runs.
 - `gpg-passphrase` is only needed when the signing key is passphrase-protected.
-- This action currently sets the commit author to `github-actions[bot]`. That gives you a cryptographically signed commit, but GitHub may not show a green `Verified` badge unless the signing identity and uploaded public key match the author GitHub account.
+- By default this action sets the commit author to `github-actions[bot]`. That gives you a cryptographically signed commit, but GitHub may not show a green `Verified` badge unless the signing identity and uploaded public key match the author GitHub account.
+- For GitHub `Verified`, set `git-user-name` and `git-user-email` to a bot or service account you control, then upload the public GPG key to that same GitHub account.
 
 ## Generate a GPG Key for CI
 
@@ -151,6 +156,8 @@ Then upload that public key in GitHub under `Settings` -> `SSH and GPG keys` for
   uses: egose/actions/release-tag@main
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
+    git-user-name: release-bot
+    git-user-email: release-bot@example.com
     sign-commit: 'true'
     gpg-private-key: ${{ secrets.RELEASE_GPG_PRIVATE_KEY }}
     gpg-passphrase: ${{ secrets.RELEASE_GPG_PASSPHRASE }}
@@ -161,3 +168,4 @@ Then upload that public key in GitHub under `Settings` -> `SSH and GPG keys` for
 - If no previous tag exists, provide `tag` once to seed release history.
 - If PR creation or merge fails, verify repository permissions and token scopes first.
 - If commit signing fails, confirm the private key is ASCII-armored, the passphrase is correct, and at least one secret key is available to `gpg --list-secret-keys` on the runner.
+- If the commit is signed but GitHub shows `Unverified`, confirm the public GPG key is uploaded to the GitHub account that matches `git-user-email` and that the commit author is not left as `github-actions[bot]` unless that key actually belongs to that account.
