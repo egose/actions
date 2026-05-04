@@ -42,3 +42,4 @@ jobs:
         sign-commit: 'true'
         gpg-private-key: ${{ secrets.RELEASE_GPG_PRIVATE_KEY }}
         gpg-passphrase: ${{ secrets.RELEASE_GPG_PASSPHRASE }}
+        git-user-email: ${{ secrets.RELEASE_USER_EMAIL }}

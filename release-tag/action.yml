@@ -20,6 +20,14 @@ inputs:
     description: Path to the release-it binary
     required: false
     default: ./node_modules/.bin/release-it
+  git-user-name:
+    description: Git author name used for the release commit
+    required: false
+    default: github-actions[bot]
+  git-user-email:
+    description: Git author email used for the release commit
+    required: false
+    default: github-actions[bot]@users.noreply.github.com
   sign-commit:
     description: Sign the release commit created by release-it
     required: false
@@ -96,13 +104,15 @@ runs:
     id: release-it
     shell: bash
     env:
+      GIT_USER_NAME: ${{ inputs.git-user-name }}
+      GIT_USER_EMAIL: ${{ inputs.git-user-email }}
       SIGN_COMMIT: ${{ inputs.sign-commit }}
       GPG_PRIVATE_KEY: ${{ inputs.gpg-private-key }}
       GPG_PASSPHRASE: ${{ inputs.gpg-passphrase }}
     run: |
       TAG_VERSION="v${{ steps.new-tag.outputs.tag }}"
-      git config user.name "github-actions[bot]"
-      git config user.email "github-actions[bot]@users.noreply.github.com"
+      git config user.name "$GIT_USER_NAME"
+      git config user.email "$GIT_USER_EMAIL"
 
       if [ "$SIGN_COMMIT" = 'true' ]; then
         mkdir -p "$HOME/.gnupg"
