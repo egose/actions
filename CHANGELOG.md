@@ -1,3 +1,9 @@
+## [0.5.0](https://github.com/egose/actions/compare/v0.4.0...v0.5.0) (2026-05-04)
+
+### Features
+
+* add GPG signing support for release commits ([72b4474](https://github.com/egose/actions/commit/72b4474f6e8068d0db3492528c3e420fd43e52fc))
+
 ## [0.4.0](https://github.com/egose/actions/compare/v0.3.0...v0.4.0) (2026-05-03)
 
 ### Features
