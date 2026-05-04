@@ -1,3 +1,15 @@
+## [0.6.0](https://github.com/egose/actions/compare/v0.5.2...v0.6.0) (2026-05-04)
+
+### Features
+
+* add frozen lockfile support to yarn-packages ([2fc9f81](https://github.com/egose/actions/commit/2fc9f81c341c7a2d7584c3cfa1e6f5fd72f65e19))
+* add npm-packages action ([4721f7a](https://github.com/egose/actions/commit/4721f7ac56f0cd357abf65ea6cddc1557e250b9e))
+* add pnpm-packages action ([365f01b](https://github.com/egose/actions/commit/365f01bf8fae5a561a95f62500bc5c58198700a6))
+
+### Docs
+
+* register npm and pnpm actions in root README ([57148bd](https://github.com/egose/actions/commit/57148bd3c7cfc69fd39ddac74fd39bf52b836420))
+
 ## [0.5.2](https://github.com/egose/actions/compare/v0.5.1...v0.5.2) (2026-05-04)
 
 ## [0.5.1](https://github.com/egose/actions/compare/v0.5.0...v0.5.1) (2026-05-04)
