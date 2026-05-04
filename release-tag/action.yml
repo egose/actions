@@ -20,6 +20,18 @@ inputs:
     description: Path to the release-it binary
     required: false
     default: ./node_modules/.bin/release-it
+  sign-commit:
+    description: Sign the release commit created by release-it
+    required: false
+    default: 'false'
+  gpg-private-key:
+    description: ASCII-armored GPG private key used to sign the release commit
+    required: false
+    default: ''
+  gpg-passphrase:
+    description: Passphrase for the GPG private key
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -83,10 +95,53 @@ runs:
   - name: Create Tag and Changelog with release-it
     id: release-it
     shell: bash
+    env:
+      SIGN_COMMIT: ${{ inputs.sign-commit }}
+      GPG_PRIVATE_KEY: ${{ inputs.gpg-private-key }}
+      GPG_PASSPHRASE: ${{ inputs.gpg-passphrase }}
     run: |
       TAG_VERSION="v${{ steps.new-tag.outputs.tag }}"
       git config user.name "github-actions[bot]"
       git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      if [ "$SIGN_COMMIT" = 'true' ]; then
+        mkdir -p "$HOME/.gnupg"
+        chmod 700 "$HOME/.gnupg"
+        printf 'pinentry-mode loopback\n' >> "$HOME/.gnupg/gpg.conf"
+        printf 'allow-loopback-pinentry\n' >> "$HOME/.gnupg/gpg-agent.conf"
+
+        if [ -n "$GPG_PRIVATE_KEY" ]; then
+          key_file=$(mktemp)
+          printf '%s' "$GPG_PRIVATE_KEY" > "$key_file"
+
+          if [ -n "$GPG_PASSPHRASE" ]; then
+            gpg --batch --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" --import "$key_file"
+          else
+            gpg --batch --import "$key_file"
+          fi
+
+          rm -f "$key_file"
+        fi
+
+        signing_key=$(gpg --list-secret-keys --with-colons --fingerprint | grep '^fpr:' | head -n 1 | cut -d: -f10)
+        if [ -z "$signing_key" ]; then
+          echo '::error::sign-commit is enabled but no GPG secret key is available. Provide gpg-private-key or import a key before running this action.'
+          exit 1
+        fi
+
+        git config user.signingkey "$signing_key"
+        git config commit.gpgsign true
+
+        if [ -n "$GPG_PASSPHRASE" ]; then
+          gpg_wrapper=$(mktemp)
+          printf '%s\n' '#!/usr/bin/env bash' 'exec gpg --batch --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" "$@"' > "$gpg_wrapper"
+          chmod 700 "$gpg_wrapper"
+          export GPG_PASSPHRASE
+          git config gpg.program "$gpg_wrapper"
+        fi
+
+        gpgconf --kill gpg-agent || true
+      fi
 
       branch="changelog/${{ steps.new-tag.outputs.tag }}"
       BASE_BRANCH="${{ github.ref_name }}"
@@ -96,7 +151,12 @@ runs:
       git checkout -b "$branch"
       git push --set-upstream origin "$branch"
 
-      ${{ inputs.release-it-path }} ${{ steps.new-tag.outputs.tag }} --ci
+      release_it_args=("${{ steps.new-tag.outputs.tag }}" --ci)
+      if [ "$SIGN_COMMIT" = 'true' ]; then
+        release_it_args+=(--git.commitArgs=--gpg-sign)
+      fi
+
+      ${{ inputs.release-it-path }} "${release_it_args[@]}"
       git push origin "$branch"
 
       pr_title="chore(release): release candidate $TAG_VERSION"

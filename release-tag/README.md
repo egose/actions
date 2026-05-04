@@ -64,6 +64,9 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-merge-pr: ${{ github.event.inputs.auto-merge-pr }}
           delete-merged-branch: ${{ github.event.inputs.delete-merged-branch }}
+          sign-commit: 'true'
+          gpg-private-key: ${{ secrets.RELEASE_GPG_PRIVATE_KEY }}
+          gpg-passphrase: ${{ secrets.RELEASE_GPG_PASSPHRASE }}
 ```
 
 ## Inputs
@@ -75,6 +78,9 @@ jobs:
 | `auto-merge-pr` | No | `"false"` | Merges the generated release PR immediately after creation when set to `true`. |
 | `delete-merged-branch` | No | `"false"` | Deletes the generated `changelog/*` branch after a successful auto-merge. |
 | `release-it-path` | No | `./node_modules/.bin/release-it` | Path to the `release-it` executable. |
+| `sign-commit` | No | `"false"` | Signs the release commit that `release-it` creates. |
+| `gpg-private-key` | No | `""` | ASCII-armored GPG private key to import before creating the release commit. |
+| `gpg-passphrase` | No | `""` | Passphrase for `gpg-private-key`, when the key is passphrase-protected. |
 
 ## How Versioning Works
 
@@ -90,8 +96,68 @@ jobs:
 - The base branch is taken from `github.ref_name`, so the PR targets the branch that triggered the workflow.
 - `delete-merged-branch` only runs after a successful auto-merge.
 - If branch protection or required checks block merges, the auto-merge API call fails and the action fails with it.
+- `sign-commit` does not create a new GPG key. It only tells the action to sign the `release-it` commit.
+- When `sign-commit` is enabled, the action imports `gpg-private-key` if provided and then forces `release-it` to create its commit with `--gpg-sign`.
+- If `gpg-private-key` is omitted, the runner must already have a usable GPG secret key before this action runs.
+- `gpg-passphrase` is only needed when the signing key is passphrase-protected.
+- This action currently sets the commit author to `github-actions[bot]`. That gives you a cryptographically signed commit, but GitHub may not show a green `Verified` badge unless the signing identity and uploaded public key match the author GitHub account.
+
+## Generate a GPG Key for CI
+
+Create a dedicated key pair for release automation on a trusted machine, then store the private key in your CI secrets.
+
+1. Generate a key:
+
+```sh
+gpg --full-generate-key
+```
+
+Recommended answers:
+- Key type: `RSA and RSA`
+- Key size: `4096`
+- Expiration: your team preference
+- Real name: `Release Automation`
+- Email: an address you control for this key
+- Passphrase: set one unless you intentionally want an unprotected CI key
+
+2. List the new key and copy its key ID or fingerprint:
+
+```sh
+gpg --list-secret-keys --keyid-format LONG
+```
+
+3. Export the private key in ASCII-armored format for `gpg-private-key`:
+
+```sh
+gpg --armor --export-secret-keys YOUR_KEY_ID
+```
+
+4. Save that exported block as a GitHub Actions secret, for example `RELEASE_GPG_PRIVATE_KEY`.
+
+5. If the key has a passphrase, save that as another secret such as `RELEASE_GPG_PASSPHRASE`.
+
+6. Optionally export the public key and add it to the GitHub account that owns the signing identity if you want GitHub signature verification:
+
+```sh
+gpg --armor --export YOUR_KEY_ID
+```
+
+Then upload that public key in GitHub under `Settings` -> `SSH and GPG keys` for the account that should own the signing key.
+
+## CI Example
+
+```yaml
+- name: Create release PR
+  uses: egose/actions/release-tag@main
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+    sign-commit: 'true'
+    gpg-private-key: ${{ secrets.RELEASE_GPG_PRIVATE_KEY }}
+    gpg-passphrase: ${{ secrets.RELEASE_GPG_PASSPHRASE }}
+```
 
 ## Troubleshooting
 
 - If no previous tag exists, provide `tag` once to seed release history.
 - If PR creation or merge fails, verify repository permissions and token scopes first.
+- If commit signing fails, confirm the private key is ASCII-armored, the passphrase is correct, and at least one secret key is available to `gpg --list-secret-keys` on the runner.
