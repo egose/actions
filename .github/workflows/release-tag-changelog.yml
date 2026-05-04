@@ -37,3 +37,5 @@ jobs:
       with:
         tag: ${{ github.event.inputs.tag }}
         github-token: ${{ secrets.GITHUB_TOKEN }}
+        auto-merge-pr: 'true'
+        delete-merged-branch: 'true'
