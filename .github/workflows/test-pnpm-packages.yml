@@ -1,0 +1,50 @@
+name: Test action pnpm-packages
+
+on:
+  pull_request:
+    paths:
+    - .github/workflows/test-pnpm-packages.yml
+    - pnpm-packages/**
+    - tests/fixtures/pnpm-packages/**
+  push:
+    branches:
+    - main
+    paths:
+    - .github/workflows/test-pnpm-packages.yml
+    - pnpm-packages/**
+    - tests/fixtures/pnpm-packages/**
+  workflow_dispatch:
+
+jobs:
+  pnpm-packages-test:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Enable Corepack
+      run: corepack enable
+
+    - name: Install package fixtures
+      uses: ./pnpm-packages
+      with:
+        paths: |
+          tests/fixtures/pnpm-packages/app-one
+          tests/fixtures/pnpm-packages/app-two
+
+    - name: Verify pnpm install outputs
+      shell: bash
+      run: |
+        test -f tests/fixtures/pnpm-packages/app-one/pnpm-lock.yaml
+        test -f tests/fixtures/pnpm-packages/app-two/pnpm-lock.yaml
+
+    - name: Reinstall package fixtures in frozen mode
+      uses: ./pnpm-packages
+      with:
+        frozen: 'true'
+        paths: |
+          tests/fixtures/pnpm-packages/app-one
+          tests/fixtures/pnpm-packages/app-two

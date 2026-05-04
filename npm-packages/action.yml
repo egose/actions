@@ -1,5 +1,5 @@
-name: Install Packages with Yarn
-description: Install packages with Yarn based on the package.json file(s) located in the specified directories
+name: Install Packages with NPM
+description: Install packages with npm based on the package.json file(s) located in the specified directories
 
 inputs:
   paths:
@@ -20,7 +20,7 @@ runs:
     with:
       path: |
         **/node_modules
-      key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
+      key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
 
   - name: Install Packages
     run: |
@@ -39,9 +39,9 @@ runs:
 
         cd "${target}"
         if [ "${frozen}" = 'true' ]; then
-          yarn install --frozen-lockfile
+          npm ci
         else
-          yarn install
+          npm install
         fi
       done
     shell: bash

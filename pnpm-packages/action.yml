@@ -1,5 +1,5 @@
-name: Install Packages with Yarn
-description: Install packages with Yarn based on the package.json file(s) located in the specified directories
+name: Install Packages with PNPM
+description: Install packages with pnpm based on the package.json file(s) located in the specified directories
 
 inputs:
   paths:
@@ -20,7 +20,7 @@ runs:
     with:
       path: |
         **/node_modules
-      key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
+      key: ${{ runner.os }}-modules-${{ hashFiles('**/pnpm-lock.yaml') }}
 
   - name: Install Packages
     run: |
@@ -39,9 +39,9 @@ runs:
 
         cd "${target}"
         if [ "${frozen}" = 'true' ]; then
-          yarn install --frozen-lockfile
+          pnpm install --frozen-lockfile
         else
-          yarn install
+          pnpm install
         fi
       done
     shell: bash

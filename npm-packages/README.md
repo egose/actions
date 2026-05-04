@@ -1,13 +1,13 @@
-# Install Packages with Yarn
+# Install Packages with NPM
 
-Installs dependencies with Yarn for one or more directories that contain a `package.json` file.
+Installs dependencies with npm for one or more directories that contain a `package.json` file.
 
 ## What It Does
 
-- Restores a cache for `**/node_modules` keyed by all `yarn.lock` files.
+- Restores a cache for `**/node_modules` keyed by all `package-lock.json` files.
 - Iterates through the configured directories.
-- Runs `yarn install` in each existing directory.
-- Optionally runs `yarn install --frozen-lockfile` for strict CI installs.
+- Runs `npm install` in each existing directory.
+- Optionally runs `npm ci` for strict CI installs.
 
 ## Usage
 
@@ -28,17 +28,15 @@ jobs:
         with:
           node-version: '20'
 
-      - run: corepack enable
-
       - name: Install dependencies
-        uses: egose/actions/yarn-packages@main
+        uses: egose/actions/npm-packages@main
 ```
 
 ### Install Multiple Workspaces
 
 ```yaml
 - name: Install multiple package sets
-  uses: egose/actions/yarn-packages@main
+  uses: egose/actions/npm-packages@main
   with:
     paths: |
       .
@@ -50,7 +48,7 @@ jobs:
 
 ```yaml
 - name: Install dependencies from lockfiles only
-  uses: egose/actions/yarn-packages@main
+  uses: egose/actions/npm-packages@main
   with:
     frozen: 'true'
 ```
@@ -60,12 +58,12 @@ jobs:
 | Name | Required | Default | Description |
 | --- | --- | --- | --- |
 | `paths` | No | `.` | Newline-separated list of directories that contain `package.json` files. |
-| `frozen` | No | `'false'` | Runs `yarn install --frozen-lockfile` instead of `yarn install`. |
+| `frozen` | No | `'false'` | Runs `npm ci` instead of `npm install`. |
 
 ## Notes
 
-- This action does not install Node.js or Yarn. Set those up earlier in the workflow.
+- This action does not install Node.js. Set it up earlier in the workflow.
 - Missing directories are skipped.
-- The cache key is based on `hashFiles('**/yarn.lock')`, so any lockfile change refreshes the cache.
-- `frozen: 'true'` requires matching `yarn.lock` files to already exist for each target directory.
+- The cache key is based on `hashFiles('**/package-lock.json')`, so any lockfile change refreshes the cache.
+- `frozen: 'true'` requires matching `package-lock.json` files to already exist for each target directory.
 - This action has no outputs.
