@@ -7,6 +7,7 @@ Installs dependencies with Yarn for one or more directories that contain a `pack
 - Restores a cache for `**/node_modules` keyed by all `yarn.lock` files.
 - Iterates through the configured directories.
 - Runs `yarn install` in each existing directory.
+- Optionally runs `yarn install --frozen-lockfile` for strict CI installs.
 
 ## Usage
 
@@ -45,15 +46,26 @@ jobs:
       packages/shared
 ```
 
+### Strict Lockfile Mode
+
+```yaml
+- name: Install dependencies from lockfiles only
+  uses: egose/actions/yarn-packages@main
+  with:
+    frozen: 'true'
+```
+
 ## Inputs
 
 | Name | Required | Default | Description |
 | --- | --- | --- | --- |
 | `paths` | No | `.` | Newline-separated list of directories that contain `package.json` files. |
+| `frozen` | No | `'false'` | Runs `yarn install --frozen-lockfile` instead of `yarn install`. |
 
 ## Notes
 
 - This action does not install Node.js or Yarn. Set those up earlier in the workflow.
 - Missing directories are skipped.
 - The cache key is based on `hashFiles('**/yarn.lock')`, so any lockfile change refreshes the cache.
+- `frozen: 'true'` requires matching `yarn.lock` files to already exist for each target directory.
 - This action has no outputs.

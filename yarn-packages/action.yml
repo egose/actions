@@ -6,6 +6,10 @@ inputs:
     description: List of directories where file package.json located
     default: .
     required: false
+  frozen:
+    description: Run installs in strict lockfile mode
+    default: 'false'
+    required: false
 
 runs:
   using: composite
@@ -22,6 +26,7 @@ runs:
     run: |
       paths_str=$'${{ inputs.paths }}'
       paths=(${paths_str//$'\n'/ })
+      frozen='${{ inputs.frozen }}'
       dir="$(pwd)"
 
       for path in "${paths[@]}"
@@ -33,6 +38,10 @@ runs:
         fi
 
         cd "${target}"
-        yarn install
+        if [ "${frozen}" = 'true' ]; then
+          yarn install --frozen-lockfile
+        else
+          yarn install
+        fi
       done
     shell: bash

@@ -40,3 +40,11 @@ jobs:
       run: |
         test -f tests/fixtures/yarn-packages/app-one/yarn.lock
         test -f tests/fixtures/yarn-packages/app-two/yarn.lock
+
+    - name: Reinstall package fixtures in frozen mode
+      uses: ./yarn-packages
+      with:
+        frozen: 'true'
+        paths: |
+          tests/fixtures/yarn-packages/app-one
+          tests/fixtures/yarn-packages/app-two
