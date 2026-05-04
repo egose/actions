@@ -1,0 +1,5 @@
+{
+  "name": "pnpm-packages-fixture-app-one",
+  "private": true,
+  "packageManager": "pnpm@10.18.3"
+}
