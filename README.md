@@ -8,6 +8,8 @@ This repository contains several reusable composite GitHub Actions.
 | --- | --- |
 | [`asdf-tools`](./asdf-tools/README.md) | Installs `asdf` and tool versions from `.tool-versions`. |
 | [`docker-build-push`](./docker-build-push/README.md) | Builds and pushes a Docker image, with optional Trivy scanning. |
+| [`npm-packages`](./npm-packages/README.md) | Runs `npm install` across one or more package directories. |
+| [`pnpm-packages`](./pnpm-packages/README.md) | Runs `pnpm install` across one or more package directories. |
 | [`precommit`](./precommit/README.md) | Runs `pre-commit` and can commit hook-generated changes. |
 | [`release-tag`](./release-tag/README.md) | Generates release candidate PRs from semantic versioning rules. |
 | [`yarn-packages`](./yarn-packages/README.md) | Runs `yarn install` across one or more package directories. |
