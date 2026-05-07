@@ -48,3 +48,11 @@ jobs:
         paths: |
           tests/fixtures/yarn-packages/app-one
           tests/fixtures/yarn-packages/app-two
+
+    - name: Reinstall package fixtures ignoring scripts
+      uses: ./yarn-packages
+      with:
+        ignore-scripts: 'true'
+        paths: |
+          tests/fixtures/yarn-packages/app-one
+          tests/fixtures/yarn-packages/app-two
