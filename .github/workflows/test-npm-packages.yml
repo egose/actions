@@ -45,3 +45,11 @@ jobs:
         paths: |
           tests/fixtures/npm-packages/app-one
           tests/fixtures/npm-packages/app-two
+
+    - name: Reinstall package fixtures ignoring scripts
+      uses: ./npm-packages
+      with:
+        ignore-scripts: 'true'
+        paths: |
+          tests/fixtures/npm-packages/app-one
+          tests/fixtures/npm-packages/app-two
