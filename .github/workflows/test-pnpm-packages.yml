@@ -48,3 +48,11 @@ jobs:
         paths: |
           tests/fixtures/pnpm-packages/app-one
           tests/fixtures/pnpm-packages/app-two
+
+    - name: Reinstall package fixtures ignoring scripts
+      uses: ./pnpm-packages
+      with:
+        ignore-scripts: 'true'
+        paths: |
+          tests/fixtures/pnpm-packages/app-one
+          tests/fixtures/pnpm-packages/app-two
