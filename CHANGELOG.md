@@ -1,3 +1,11 @@
+## [0.7.0](https://github.com/egose/actions/compare/v0.6.0...v0.7.0) (2026-05-07)
+
+### Features
+
+* add ignore-scripts support to npm-packages ([6132626](https://github.com/egose/actions/commit/6132626ac848ce541cef209eee86a3a13bb78c40))
+* add ignore-scripts support to pnpm-packages ([d602d63](https://github.com/egose/actions/commit/d602d639695a124e497746294c013346c3de97fd))
+* add ignore-scripts support to yarn-packages ([217ded8](https://github.com/egose/actions/commit/217ded8ae8aa7be0f543653afa80c25baafc2651))
+
 ## [0.6.0](https://github.com/egose/actions/compare/v0.5.2...v0.6.0) (2026-05-04)
 
 ### Features
