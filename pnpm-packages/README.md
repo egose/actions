@@ -8,6 +8,7 @@ Installs dependencies with pnpm for one or more directories that contain a `pack
 - Iterates through the configured directories.
 - Runs `pnpm install` in each existing directory.
 - Optionally runs `pnpm install --frozen-lockfile` for strict CI installs.
+- Optionally adds `--ignore-scripts` to skip lifecycle scripts.
 
 ## Usage
 
@@ -55,12 +56,22 @@ jobs:
     frozen: 'true'
 ```
 
+### Skip Lifecycle Scripts
+
+```yaml
+- name: Install dependencies without lifecycle scripts
+  uses: egose/actions/pnpm-packages@main
+  with:
+    ignore-scripts: 'true'
+```
+
 ## Inputs
 
 | Name | Required | Default | Description |
 | --- | --- | --- | --- |
 | `paths` | No | `.` | Newline-separated list of directories that contain `package.json` files. |
 | `frozen` | No | `'false'` | Runs `pnpm install --frozen-lockfile` instead of `pnpm install`. |
+| `ignore-scripts` | No | `'false'` | Adds `--ignore-scripts` to the pnpm install command. |
 
 ## Notes
 
@@ -68,4 +79,5 @@ jobs:
 - Missing directories are skipped.
 - The cache key is based on `hashFiles('**/pnpm-lock.yaml')`, so any lockfile change refreshes the cache.
 - `frozen: 'true'` requires matching `pnpm-lock.yaml` files to already exist for each target directory.
+- `ignore-scripts: 'true'` applies to both normal installs and frozen installs.
 - This action has no outputs.

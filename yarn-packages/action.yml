@@ -10,6 +10,10 @@ inputs:
     description: Run installs in strict lockfile mode
     default: 'false'
     required: false
+  ignore-scripts:
+    description: Do not run package lifecycle scripts during install
+    default: 'false'
+    required: false
 
 runs:
   using: composite
@@ -27,6 +31,7 @@ runs:
       paths_str=$'${{ inputs.paths }}'
       paths=(${paths_str//$'\n'/ })
       frozen='${{ inputs.frozen }}'
+      ignore_scripts='${{ inputs.ignore-scripts }}'
       dir="$(pwd)"
 
       for path in "${paths[@]}"
@@ -38,7 +43,20 @@ runs:
         fi
 
         cd "${target}"
-        if [ "${frozen}" = 'true' ]; then
+        if [ "${ignore_scripts}" = 'true' ]; then
+          yarn_version="$(yarn --version)"
+          yarn_major="${yarn_version%%.*}"
+
+          if [ "${frozen}" = 'true' ] && [ "${yarn_major}" -ge 2 ] 2>/dev/null; then
+            YARN_ENABLE_SCRIPTS=false yarn install --frozen-lockfile
+          elif [ "${frozen}" = 'true' ]; then
+            yarn install --frozen-lockfile --ignore-scripts
+          elif [ "${yarn_major}" -ge 2 ] 2>/dev/null; then
+            YARN_ENABLE_SCRIPTS=false yarn install
+          else
+            yarn install --ignore-scripts
+          fi
+        elif [ "${frozen}" = 'true' ]; then
           yarn install --frozen-lockfile
         else
           yarn install

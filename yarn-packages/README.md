@@ -8,6 +8,7 @@ Installs dependencies with Yarn for one or more directories that contain a `pack
 - Iterates through the configured directories.
 - Runs `yarn install` in each existing directory.
 - Optionally runs `yarn install --frozen-lockfile` for strict CI installs.
+- Optionally skips lifecycle scripts using Yarn-version-aware behavior.
 
 ## Usage
 
@@ -55,12 +56,22 @@ jobs:
     frozen: 'true'
 ```
 
+### Skip Lifecycle Scripts
+
+```yaml
+- name: Install dependencies without lifecycle scripts
+  uses: egose/actions/yarn-packages@main
+  with:
+    ignore-scripts: 'true'
+```
+
 ## Inputs
 
 | Name | Required | Default | Description |
 | --- | --- | --- | --- |
 | `paths` | No | `.` | Newline-separated list of directories that contain `package.json` files. |
 | `frozen` | No | `'false'` | Runs `yarn install --frozen-lockfile` instead of `yarn install`. |
+| `ignore-scripts` | No | `'false'` | Skips lifecycle scripts. Uses `--ignore-scripts` for Yarn 1 and `YARN_ENABLE_SCRIPTS=false` for Yarn 2+. |
 
 ## Notes
 
@@ -68,4 +79,5 @@ jobs:
 - Missing directories are skipped.
 - The cache key is based on `hashFiles('**/yarn.lock')`, so any lockfile change refreshes the cache.
 - `frozen: 'true'` requires matching `yarn.lock` files to already exist for each target directory.
+- `ignore-scripts: 'true'` checks the active Yarn major version in each target directory and chooses the compatible mechanism.
 - This action has no outputs.

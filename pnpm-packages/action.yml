@@ -10,6 +10,10 @@ inputs:
     description: Run installs in strict lockfile mode
     default: 'false'
     required: false
+  ignore-scripts:
+    description: Do not run package lifecycle scripts during install
+    default: 'false'
+    required: false
 
 runs:
   using: composite
@@ -27,6 +31,7 @@ runs:
       paths_str=$'${{ inputs.paths }}'
       paths=(${paths_str//$'\n'/ })
       frozen='${{ inputs.frozen }}'
+      ignore_scripts='${{ inputs.ignore-scripts }}'
       dir="$(pwd)"
 
       for path in "${paths[@]}"
@@ -38,8 +43,12 @@ runs:
         fi
 
         cd "${target}"
-        if [ "${frozen}" = 'true' ]; then
+        if [ "${frozen}" = 'true' ] && [ "${ignore_scripts}" = 'true' ]; then
+          pnpm install --frozen-lockfile --ignore-scripts
+        elif [ "${frozen}" = 'true' ]; then
           pnpm install --frozen-lockfile
+        elif [ "${ignore_scripts}" = 'true' ]; then
+          pnpm install --ignore-scripts
         else
           pnpm install
         fi

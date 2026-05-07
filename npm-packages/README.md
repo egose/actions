@@ -8,6 +8,7 @@ Installs dependencies with npm for one or more directories that contain a `packa
 - Iterates through the configured directories.
 - Runs `npm install` in each existing directory.
 - Optionally runs `npm ci` for strict CI installs.
+- Optionally adds `--ignore-scripts` to skip lifecycle scripts.
 
 ## Usage
 
@@ -53,12 +54,22 @@ jobs:
     frozen: 'true'
 ```
 
+### Skip Lifecycle Scripts
+
+```yaml
+- name: Install dependencies without lifecycle scripts
+  uses: egose/actions/npm-packages@main
+  with:
+    ignore-scripts: 'true'
+```
+
 ## Inputs
 
 | Name | Required | Default | Description |
 | --- | --- | --- | --- |
 | `paths` | No | `.` | Newline-separated list of directories that contain `package.json` files. |
 | `frozen` | No | `'false'` | Runs `npm ci` instead of `npm install`. |
+| `ignore-scripts` | No | `'false'` | Adds `--ignore-scripts` to the npm install command. |
 
 ## Notes
 
@@ -66,4 +77,5 @@ jobs:
 - Missing directories are skipped.
 - The cache key is based on `hashFiles('**/package-lock.json')`, so any lockfile change refreshes the cache.
 - `frozen: 'true'` requires matching `package-lock.json` files to already exist for each target directory.
+- `ignore-scripts: 'true'` applies to both normal installs and frozen installs.
 - This action has no outputs.
