@@ -70,20 +70,21 @@ runs:
       echo "${{ inputs.context }}"
       cd "${{ inputs.context }}"
 
-      plugins_str=$'${{ inputs.plugins }}'
-      plugins=(${plugins_str//$'\n'/ })
-
       echo "✅ Adding additional plugins..."
-      for plugin in "${plugins[@]}"
-      do
-        readarray -d '=' -t keyurl <<< "$plugin"
-        if (( ${#keyurl[@]} < 2 )); then
+      while IFS= read -r plugin; do
+        if [[ -z "$plugin" ]]; then
           continue
         fi
 
-        echo "➡️ ${keyurl[0]} ${keyurl[1]}..."
-        asdf plugin add "${keyurl[0]}" "${keyurl[1]}" || true
-      done
+        key=${plugin%%=*}
+        url=${plugin#*=}
+        if [[ "$key" == "$url" ]]; then
+          continue
+        fi
+
+        echo "➡️ $key $url..."
+        asdf plugin add "$key" "$url" || true
+      done <<< '${{ inputs.plugins }}'
 
       echo "✅ Adding main plugins..."
       cat .tool-versions | cut -f 1 -d ' ' | xargs -n 1 asdf plugin add || true
