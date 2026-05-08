@@ -22,6 +22,8 @@ jobs:
         platform:
         - name: Linux x64
           runner: ubuntu-24.04
+        - name: Linux arm64
+          runner: ubuntu-24.04-arm
         - name: macOS Intel
           runner: macos-13
         - name: macOS Apple Silicon
