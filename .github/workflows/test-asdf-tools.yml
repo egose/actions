@@ -16,7 +16,17 @@ on:
 
 jobs:
   asdf-tools-test:
-    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+        - name: Linux x64
+          runner: ubuntu-24.04
+        - name: macOS Intel
+          runner: macos-13
+        - name: macOS Apple Silicon
+          runner: macos-14
+    runs-on: ${{ matrix.platform.runner }}
     steps:
     - uses: hmarr/debug-action@f7318c783045ac39ed9bb497e22ce835fdafbfe6
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
