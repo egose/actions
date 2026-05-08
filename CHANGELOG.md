@@ -1,3 +1,17 @@
+## [0.8.0](https://github.com/egose/actions/compare/v0.7.0...v0.8.0) (2026-05-08)
+
+### Features
+
+* support macOS and ARM architectures ([f7ad1ed](https://github.com/egose/actions/commit/f7ad1ed55a6ccd9cf4e26e8a068dfcf7bc169658))
+
+### Docs
+
+* update supported platforms and runner information in README ([401a84e](https://github.com/egose/actions/commit/401a84e115632bf42a52bd9b2648172a687f4e70))
+
+### Refactors
+
+* improve plugin parsing logic ([f7d1a92](https://github.com/egose/actions/commit/f7d1a92c3a02810e4f5bcde34d97456c0ee82021))
+
 ## [0.7.0](https://github.com/egose/actions/compare/v0.6.0...v0.7.0) (2026-05-07)
 
 ### Features
