@@ -4,7 +4,7 @@ Installs `asdf`, restores the `~/.asdf` cache, and installs the tool versions de
 
 ## What It Does
 
-- Downloads and installs the `asdf` CLI on Linux runners.
+- Downloads and installs the `asdf` CLI on Linux and macOS runners.
 - Restores and updates the `~/.asdf` directory with `actions/cache`.
 - Adds plugins listed in `.tool-versions`.
 - Optionally adds extra plugins from the `plugins` input.
@@ -60,5 +60,6 @@ jobs:
 ## Notes
 
 - This action expects a `.tool-versions` file to exist in the selected `context` directory.
-- The download URL is Linux-specific, so this action is intended for Linux runners.
+- The action currently supports Linux and macOS runners on `amd64` and `arm64`.
+- Windows runners are not currently supported.
 - Cache invalidation is based on `hashFiles('**/.tool-versions')`, so updates to any `.tool-versions` file in the repository will refresh the cache key.
