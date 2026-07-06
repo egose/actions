@@ -17,7 +17,7 @@
     "ci",
     "automation"
   ],
-  "author": "Junmin Dev",
+  "author": "Junmin Ahn",
   "license": "Apache-2.0",
   "scripts": {
     "actionlint": "actionlint",
