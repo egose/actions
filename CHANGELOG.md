@@ -1,3 +1,9 @@
+## [0.9.1](https://github.com/egose/actions/compare/v0.9.0...v0.9.1) (2026-07-07)
+
+### Docs
+
+* update license and package author attribution ([d0704d3](https://github.com/egose/actions/commit/d0704d30240bd7c4299c97ad88d6ecb2b700d60e))
+
 ## [0.9.0](https://github.com/egose/actions/compare/v0.8.0...v0.9.0) (2026-05-13)
 
 ### Features
