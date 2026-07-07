@@ -21,4 +21,4 @@ jobs:
       uses: ./precommit
       with:
         commit-on-pr: 'false'
-        commit-on-push: 'false'
+        commit-on-push: 'true'
