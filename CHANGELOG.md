@@ -1,3 +1,9 @@
+## [0.10.1](https://github.com/egose/actions/compare/v0.10.0...v0.10.1) (2026-07-08)
+
+### Bug Fixes
+
+* remove extracted binary after installation ([baf8bee](https://github.com/egose/actions/commit/baf8bee54233c270a77a04d1cea2eea6075a9560))
+
 ## [0.10.0](https://github.com/egose/actions/compare/v0.9.1...v0.10.0) (2026-07-07)
 
 ### Features
