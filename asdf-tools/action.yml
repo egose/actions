@@ -48,6 +48,7 @@ runs:
       curl -fsSL -o asdf.tar.gz "$asdf_url" || { echo "❌ Failed to download ASDF from $asdf_url"; exit 1; }
       tar -xzf asdf.tar.gz && rm -f asdf.tar.gz
       install -m 0755 asdf "$install_dir/asdf"
+      rm -f asdf
 
       echo "$install_dir" >> $GITHUB_PATH
       echo "${ASDF_DATA_DIR:-$HOME/.asdf}/shims" >> $GITHUB_PATH
