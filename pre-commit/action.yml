@@ -6,6 +6,10 @@ inputs:
     description: Path to pre-commit configuration file
     required: false
     default: .pre-commit-config.yaml
+  asdf-version:
+    description: asdf version to install when python3 is missing
+    required: false
+    default: v0.19.0
   python-version:
     description: Python version to install with asdf when python3 is missing
     required: false
@@ -34,11 +38,39 @@ runs:
       restore-keys: |
         pre-commit-
 
+  - name: Check python3 and pre-commit availability
+    id: dependencies
+    shell: bash
+    run: |
+      if command -v python3 >/dev/null 2>&1; then
+        echo "python_ready=true" >> "$GITHUB_OUTPUT"
+      else
+        echo "python_ready=false" >> "$GITHUB_OUTPUT"
+      fi
+
+      if command -v pre-commit >/dev/null 2>&1; then
+        echo "precommit_ready=true" >> "$GITHUB_OUTPUT"
+      else
+        echo "precommit_ready=false" >> "$GITHUB_OUTPUT"
+      fi
+
+      if command -v python3 >/dev/null 2>&1 && command -v pre-commit >/dev/null 2>&1; then
+        echo "dependencies_ready=true" >> "$GITHUB_OUTPUT"
+      else
+        echo "dependencies_ready=false" >> "$GITHUB_OUTPUT"
+      fi
+
+  - name: Install asdf
+    if: steps.dependencies.outputs.python_ready != 'true'
+    uses: ./asdf-install
+    with:
+      version: ${{ inputs.asdf-version }}
+
   - name: Ensure python3 and pre-commit exist
+    if: steps.dependencies.outputs.dependencies_ready != 'true'
     shell: bash
     run: bash "${{ github.action_path }}/ensure-dependencies.sh"
     env:
-      PRECOMMIT_ACTION_PATH: ${{ github.action_path }}
       PRECOMMIT_PYTHON_VERSION: ${{ inputs.python-version }}
       PRECOMMIT_VERSION: ${{ inputs.pre-commit-version }}
 

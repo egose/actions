@@ -1,0 +1,72 @@
+name: OpenShift oc login
+description: Ensure the oc CLI exists and log into an OpenShift cluster
+
+inputs:
+  openshift_server_url:
+    description: URL of the OpenShift cluster API server
+    required: true
+  openshift_token:
+    description: Authentication token for oc login
+    required: false
+  openshift_username:
+    description: Username for oc login; overrides token when paired with openshift_password
+    required: false
+  openshift_password:
+    description: Password for oc login; overrides token when paired with openshift_username
+    required: false
+  insecure_skip_tls_verify:
+    description: Skip TLS certificate verification when certificate_authority_data is not provided
+    required: false
+    default: 'false'
+  certificate_authority_data:
+    description: PEM or base64-encoded PEM certificate authority data
+    required: false
+  namespace:
+    description: Namespace to select after a successful login
+    required: false
+  asdf-version:
+    description: Version of asdf to install when oc is missing
+    required: false
+    default: v0.19.0
+  oc-version:
+    description: Version of oc to install with asdf when oc is missing
+    required: false
+    default: latest
+
+runs:
+  using: composite
+  steps:
+  - name: Check oc availability
+    id: oc
+    shell: bash
+    run: |
+      if command -v oc >/dev/null 2>&1; then
+        echo "oc_ready=true" >> "$GITHUB_OUTPUT"
+      else
+        echo "oc_ready=false" >> "$GITHUB_OUTPUT"
+      fi
+
+  - name: Install asdf
+    if: steps.oc.outputs.oc_ready != 'true'
+    uses: ./asdf-install
+    with:
+      version: ${{ inputs.asdf-version }}
+
+  - name: Ensure oc exists
+    if: steps.oc.outputs.oc_ready != 'true'
+    shell: bash
+    run: bash "${{ github.action_path }}/ensure-dependencies.sh"
+    env:
+      OCLOGIN_OC_VERSION: ${{ inputs.oc-version }}
+
+  - name: Log in to OpenShift
+    shell: bash
+    run: bash "${{ github.action_path }}/login.sh"
+    env:
+      OCLOGIN_SERVER_URL: ${{ inputs.openshift_server_url }}
+      OCLOGIN_TOKEN: ${{ inputs.openshift_token }}
+      OCLOGIN_USERNAME: ${{ inputs.openshift_username }}
+      OCLOGIN_PASSWORD: ${{ inputs.openshift_password }}
+      OCLOGIN_INSECURE_SKIP_TLS_VERIFY: ${{ inputs.insecure_skip_tls_verify }}
+      OCLOGIN_CERTIFICATE_AUTHORITY_DATA: ${{ inputs.certificate_authority_data }}
+      OCLOGIN_NAMESPACE: ${{ inputs.namespace }}

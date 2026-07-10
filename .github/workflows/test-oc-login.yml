@@ -1,0 +1,97 @@
+name: Test action oc-login
+
+on:
+  pull_request:
+    paths:
+    - .github/workflows/test-oc-login.yml
+    - asdf-install/**
+    - oc-login/**
+    - tests/fixtures/oc-login/**
+  push:
+    branches:
+    - main
+    paths:
+    - .github/workflows/test-oc-login.yml
+    - asdf-install/**
+    - oc-login/**
+    - tests/fixtures/oc-login/**
+  workflow_dispatch:
+
+jobs:
+  oc-login-uses-existing-oc:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+    - name: Install fake oc binary
+      shell: bash
+      run: |
+        mkdir -p "$RUNNER_TEMP/bin"
+        install -m 0755 tests/fixtures/oc-login/oc "$RUNNER_TEMP/bin/oc"
+        echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
+    - name: Run oc-login action with username/password
+      uses: ./oc-login
+      env:
+        FAKE_OC_LOG: ${{ runner.temp }}/oc-login.log
+      with:
+        openshift_server_url: https://api.example.test:6443
+        openshift_token: ignored-token
+        openshift_username: demo-user
+        openshift_password: demo-password
+        insecure_skip_tls_verify: 'true'
+        certificate_authority_data: |
+          -----BEGIN CERTIFICATE-----
+          fake-ca
+          -----END CERTIFICATE-----
+        namespace: example-namespace
+
+    - name: Verify login arguments and kubeconfig export
+      shell: bash
+      env:
+        FAKE_OC_LOG: ${{ runner.temp }}/oc-login.log
+      run: |
+        test -n "${KUBECONFIG:-}"
+        test -f "$KUBECONFIG"
+        grep -q '^cmd=login$' "$FAKE_OC_LOG"
+        grep -q '^arg=--server=https://api.example.test:6443$' "$FAKE_OC_LOG"
+        grep -q '^arg=--username=demo-user$' "$FAKE_OC_LOG"
+        grep -q '^arg=--password=demo-password$' "$FAKE_OC_LOG"
+
+        if grep -q '^arg=--token=' "$FAKE_OC_LOG"; then
+          exit 1
+        fi
+
+        if grep -q '^arg=--insecure-skip-tls-verify=true$' "$FAKE_OC_LOG"; then
+          exit 1
+        fi
+
+        ca_arg="$(grep '^arg=--certificate-authority=' "$FAKE_OC_LOG")"
+        test -n "$ca_arg"
+        ca_file="${ca_arg#arg=--certificate-authority=}"
+        grep -q 'BEGIN CERTIFICATE' "$ca_file"
+        grep -q '^cmd=project$' "$FAKE_OC_LOG"
+        grep -q '^arg=example-namespace$' "$FAKE_OC_LOG"
+
+  oc-login-makes-oc-available:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+    - name: Run oc-login action against an unreachable cluster
+      id: oclogin
+      continue-on-error: true
+      uses: ./oc-login
+      with:
+        openshift_server_url: https://127.0.0.1:9
+        openshift_token: dummy-token
+        insecure_skip_tls_verify: 'true'
+        oc-version: latest
+
+    - name: Verify oc is available after the action
+      shell: bash
+      env:
+        OCLOGIN_OUTCOME: ${{ steps.oclogin.outcome }}
+      run: |
+        test "$OCLOGIN_OUTCOME" = "failure"
+        oc version --client || oc version
