@@ -21,18 +21,18 @@
   "license": "Apache-2.0",
   "scripts": {
     "actionlint": "actionlint",
-    "precommit": "pre-commit run --all-files",
-    "lint": "npm run actionlint && npm run precommit",
+    "pre-commit": "pre-commit run --all-files",
+    "precommit": "npm run pre-commit",
+    "lint": "npm run actionlint && npm run pre-commit",
     "release": "release-it",
-    "changelog": "node changelog.mjs"
+    "changelog": "repo-toolkit-changelog"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.5.3",
     "@commitlint/config-conventional": "^20.5.3",
     "@commitlint/format": "^20.5.0",
     "@release-it/bumper": "^7.0.6",
-    "conventional-changelog": "^7.2.1",
-    "conventional-changelog-conventionalcommits": "^9.3.1",
+    "@repo-toolkit/changelog": "^0.4.1",
     "release-it": "^20.2.1"
   }
 }

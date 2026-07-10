@@ -18,44 +18,10 @@ runs:
   using: composite
   steps:
   - name: Install asdf
-    run: |
-      set -e
-      echo "🏠 $HOME"
-
-      case "$(uname -s)" in
-        Linux) asdf_os=linux ;;
-        Darwin) asdf_os=darwin ;;
-        *)
-          echo "❌ Unsupported OS: $(uname -s)"
-          exit 1
-          ;;
-      esac
-
-      case "$(uname -m)" in
-        x86_64) asdf_arch=amd64 ;;
-        arm64|aarch64) asdf_arch=arm64 ;;
-        *)
-          echo "❌ Unsupported architecture: $(uname -m)"
-          exit 1
-          ;;
-      esac
-
-      asdf_asset="asdf-${{ inputs.version }}-${asdf_os}-${asdf_arch}.tar.gz"
-      asdf_url="https://github.com/asdf-vm/asdf/releases/download/${{ inputs.version }}/${asdf_asset}"
-      install_dir="${RUNNER_TEMP}/asdf-bin"
-
-      mkdir -p "$install_dir"
-      curl -fsSL -o asdf.tar.gz "$asdf_url" || { echo "❌ Failed to download ASDF from $asdf_url"; exit 1; }
-      tar -xzf asdf.tar.gz && rm -f asdf.tar.gz
-      install -m 0755 asdf "$install_dir/asdf"
-      rm -f asdf
-
-      echo "$install_dir" >> $GITHUB_PATH
-      echo "${ASDF_DATA_DIR:-$HOME/.asdf}/shims" >> $GITHUB_PATH
-      export PATH="$install_dir:${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
-
-      echo "🚀 asdf installed successfully"
+    run: bash "${{ github.action_path }}/../asdf-install/install.sh"
     shell: bash
+    env:
+      ASDF_VERSION: ${{ inputs.version }}
 
   - name: Cache tools
     # See https://github.com/actions/cache/commits/main/
@@ -65,47 +31,8 @@ runs:
       key: ${{ runner.os }}-${{ runner.arch }}-${{ inputs.version }}-${{ hashFiles('**/.tool-versions') }}
 
   - name: Install asdf tools
-    run: |
-      asdf --version
-      echo "$PATH"
-      echo "${{ inputs.context }}"
-      cd "${{ inputs.context }}"
-
-      echo "✅ Adding additional plugins..."
-      while IFS= read -r plugin; do
-        if [[ -z "$plugin" ]]; then
-          continue
-        fi
-
-        key=${plugin%%=*}
-        url=${plugin#*=}
-        if [[ "$key" == "$url" ]]; then
-          continue
-        fi
-
-        echo "➡️ $key $url..."
-        asdf plugin add "$key" "$url" || true
-      done <<< '${{ inputs.plugins }}'
-
-      echo "✅ Adding main plugins..."
-      cat .tool-versions | cut -f 1 -d ' ' | xargs -n 1 asdf plugin add || true
-      asdf plugin update --all
-      asdf plugin list --urls --refs
-
-      echo "✅ Installing tools..."
-      while read -r line; do
-        # Skip empty lines or lines starting with comments (#)
-        if [[ -n "$line" && ! "$line" =~ ^# ]]; then
-          tool=$(echo "$line" | awk '{print $1}')
-          version=$(echo "$line" | awk '{print $2}')
-
-          echo "➡️ $tool $version..."
-          asdf install "$tool" "$version"
-          asdf reshim "$tool"
-        fi
-      done < .tool-versions
-
-      asdf reshim
-      asdf install
-      echo "🚀 tools installed successfully"
+    run: bash "${{ github.action_path }}/install.sh"
     shell: bash
+    env:
+      ASDF_TOOLS_CONTEXT: ${{ inputs.context }}
+      ASDF_EXTRA_PLUGINS: ${{ inputs.plugins }}

@@ -3,6 +3,6 @@ repos:
   rev: v5.0.0
   hooks:
   - id: trailing-whitespace
-    files: ^tests/fixtures/precommit/sample.txt$
+    files: ^tests/fixtures/pre-commit/sample.txt$
   - id: end-of-file-fixer
-    files: ^tests/fixtures/precommit/sample.txt$
+    files: ^tests/fixtures/pre-commit/sample.txt$

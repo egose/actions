@@ -18,7 +18,7 @@ jobs:
       uses: ./.github/actions/setup-npm
 
     - name: Rerun Pre-Commit Hooks on CI
-      uses: ./precommit
+      uses: ./pre-commit
       with:
         commit-on-pr: 'false'
         commit-on-push: 'true'

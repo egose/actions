@@ -1,0 +1,72 @@
+name: Test action pre-commit
+
+on:
+  pull_request:
+    paths:
+    - .github/workflows/test-pre-commit.yml
+    - asdf-install/**
+    - pre-commit/**
+    - precommit/**
+    - tests/fixtures/pre-commit/**
+  push:
+    branches:
+    - main
+    paths:
+    - .github/workflows/test-pre-commit.yml
+    - asdf-install/**
+    - pre-commit/**
+    - precommit/**
+    - tests/fixtures/pre-commit/**
+  workflow_dispatch:
+
+jobs:
+  pre-commit-pass:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+    - name: Run pre-commit action on clean fixture
+      uses: ./pre-commit
+      with:
+        config: tests/fixtures/pre-commit/.pre-commit-config.yaml
+        commit-on-pr: 'false'
+        commit-on-push: 'false'
+
+  precommit-compat-pass:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+    - name: Run precommit compatibility wrapper on clean fixture
+      uses: ./precommit
+      with:
+        config: tests/fixtures/pre-commit/.pre-commit-config.yaml
+        commit-on-pr: 'false'
+        commit-on-push: 'false'
+
+  pre-commit-fails-on-autofix-when-commit-disabled:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+    - name: Make fixture fail formatting hooks
+      shell: bash
+      run: |
+        printf 'fixture with trailing spaces   \n' > tests/fixtures/pre-commit/sample.txt
+
+    - name: Run pre-commit action with auto-commit disabled
+      id: precommit
+      continue-on-error: true
+      uses: ./pre-commit
+      with:
+        config: tests/fixtures/pre-commit/.pre-commit-config.yaml
+        commit-on-pr: 'false'
+        commit-on-push: 'false'
+
+    - name: Verify failure and auto-fix behavior
+      shell: bash
+      env:
+        PRECOMMIT_OUTCOME: ${{ steps.precommit.outcome }}
+      run: |
+        test "$PRECOMMIT_OUTCOME" = "failure"
+        test "$(cat tests/fixtures/pre-commit/sample.txt)" = "fixture with trailing spaces"

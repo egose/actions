@@ -4,7 +4,7 @@ Installs `asdf`, restores the `~/.asdf` cache, and installs the tool versions de
 
 ## What It Does
 
-- Downloads and installs the `asdf` CLI on Linux and macOS runners.
+- Installs the `asdf` CLI with [`asdf-install`](../asdf-install/README.md).
 - Restores and updates the `~/.asdf` directory with `actions/cache`.
 - Adds plugins listed in `.tool-versions`.
 - Optionally adds extra plugins from the `plugins` input.
@@ -53,7 +53,7 @@ jobs:
 
 | Name | Required | Default | Description |
 | --- | --- | --- | --- |
-| `version` | No | `v0.18.0` | Version of the `asdf` binary to install. |
+| `version` | No | `v0.19.0` | Version of the `asdf` binary to install. |
 | `plugins` | No | `""` | Newline-separated list of extra plugins in `<plugin>=<url>` format. |
 | `context` | No | `.` | Directory that contains the `.tool-versions` file. |
 
