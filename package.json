@@ -21,8 +21,9 @@
   "license": "Apache-2.0",
   "scripts": {
     "actionlint": "actionlint",
-    "precommit": "pre-commit run --all-files",
-    "lint": "npm run actionlint && npm run precommit",
+    "pre-commit": "pre-commit run --all-files",
+    "precommit": "npm run pre-commit",
+    "lint": "npm run actionlint && npm run pre-commit",
     "release": "release-it",
     "changelog": "repo-toolkit-changelog"
   },

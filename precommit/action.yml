@@ -1,5 +1,5 @@
 name: Run and Handle Pre-Commit
-description: Run pre-commit hooks, commit changes if needed, or fail the build.
+description: Compatibility wrapper for pre-commit. Prefer ./pre-commit.
 
 inputs:
   config:
@@ -26,91 +26,11 @@ inputs:
 runs:
   using: composite
   steps:
-  - name: Cache pre-commit environment
-    uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
+  - name: Delegate to pre-commit
+    uses: ./pre-commit
     with:
-      path: ~/.cache/pre-commit
-      key: pre-commit-${{ inputs.python-version }}-${{ inputs.pre-commit-version }}-${{ hashFiles(inputs.config) }}
-      restore-keys: |
-        pre-commit-
-
-  - name: Ensure python3 and pre-commit exist
-    shell: bash
-    run: bash "${{ github.action_path }}/ensure-dependencies.sh"
-    env:
-      PRECOMMIT_ACTION_PATH: ${{ github.action_path }}
-      PRECOMMIT_PYTHON_VERSION: ${{ inputs.python-version }}
-      PRECOMMIT_VERSION: ${{ inputs.pre-commit-version }}
-
-  - name: Chmod Local Pre-Commit Hooks
-    shell: bash
-    run: |
-      config_file="${{ inputs.config }}"
-      [ -f "$config_file" ] || exit 0
-      need_py=false
-      python3 -c "import yaml" 2>/dev/null || need_py=true
-      if [ "$need_py" = "true" ]; then
-        python3 -m pip install --quiet --user pyyaml
-      fi
-      python3 - "$config_file" <<'PY'
-      import sys, os, stat, yaml
-      with open(sys.argv[1]) as f:
-          cfg = yaml.safe_load(f) or {}
-      for repo in cfg.get("repos", []):
-          if repo.get("repo") == "local":
-              for hook in repo.get("hooks", []):
-                  entry = hook.get("entry")
-                  if entry and os.path.isfile(entry):
-                      os.chmod(entry, os.stat(entry).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-                      print(f"chmod +x {entry}")
-      PY
-
-  - name: Rerun Pre-Commit Hooks
-    id: precommit
-    shell: bash
-    run: |
-      pre_commit_exit_code=0
-      pre-commit run --config="${{ inputs.config }}" --color=always --show-diff-on-failure --all-files || pre_commit_exit_code=$?
-      echo "pre_commit_exit_code=$pre_commit_exit_code" >> $GITHUB_OUTPUT
-
-      if ! git diff --exit-code; then
-        echo "pre_commit_made_changes=true" >> $GITHUB_OUTPUT
-        echo "Pre-commit made changes, committing and pushing..."
-      else
-        echo "pre_commit_made_changes=false" >> $GITHUB_OUTPUT
-        echo "No pre-commit changes detected."
-      fi
-
-  - name: Commit & Push Pre-Commit Fixes
-    if: steps.precommit.outputs.pre_commit_made_changes == 'true' && ( (github.event_name == 'pull_request' && inputs.commit-on-pr == 'true') || (github.event_name == 'push' && inputs.commit-on-push == 'true') )
-    shell: bash
-    env:
-      HEAD_REF: ${{ github.head_ref || github.ref_name }}
-    run: |
-      git config user.name "github-actions[bot]"
-      git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-      git checkout "$HEAD_REF"
-      git add -u
-      git commit -m "chore(pre-commit): apply automatic formatting and linting fixes"
-      git push origin "$HEAD_REF"
-
-  - name: Verify Pre-Commit After Auto-Fix
-    if: steps.precommit.outputs.pre_commit_made_changes == 'true' && ( (github.event_name == 'pull_request' && inputs.commit-on-pr == 'true') || (github.event_name == 'push' && inputs.commit-on-push == 'true') )
-    shell: bash
-    run: |
-      pre-commit run --config="${{ inputs.config }}" --color=always --show-diff-on-failure --all-files
-
-  - name: Fail if Pre-Commit Changes and Commit Not Allowed
-    if: steps.precommit.outputs.pre_commit_made_changes == 'true' && ( (github.event_name == 'push' && inputs.commit-on-push != 'true') || (github.event_name == 'pull_request' && inputs.commit-on-pr != 'true') )
-    shell: bash
-    run: |
-      echo "❌ Pre-commit made changes, but automatic commits are disabled for this event."
-      echo "Please run 'pre-commit run --all-files' locally and commit the changes."
-      exit 1
-
-  - name: Fail if Pre-Commit Hooks Failed
-    if: steps.precommit.outputs.pre_commit_exit_code != '0' && steps.precommit.outputs.pre_commit_made_changes != 'true'
-    shell: bash
-    run: |
-      echo "❌ Pre-commit hooks failed."
-      exit 1
+      config: ${{ inputs.config }}
+      python-version: ${{ inputs.python-version }}
+      pre-commit-version: ${{ inputs.pre-commit-version }}
+      commit-on-pr: ${{ inputs.commit-on-pr }}
+      commit-on-push: ${{ inputs.commit-on-push }}
