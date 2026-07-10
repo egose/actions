@@ -1,8 +1,9 @@
-name: Test action asdf-tools
+name: Test actions asdf
 on:
   pull_request:
     paths:
     - .github/workflows/test-asdf-tools.yml
+    - asdf-install/**
     - asdf-tools/**
     - tests/fixtures/asdf-tools/**
   push:
@@ -10,11 +11,38 @@ on:
     - main
     paths:
     - .github/workflows/test-asdf-tools.yml
+    - asdf-install/**
     - asdf-tools/**
     - tests/fixtures/asdf-tools/**
   workflow_dispatch:
 
 jobs:
+  asdf-install-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+        - name: Linux x64
+          runner: ubuntu-24.04
+        - name: Linux arm64
+          runner: ubuntu-24.04-arm
+        - name: macOS Intel
+          runner: macos-13
+        - name: macOS Apple Silicon
+          runner: macos-14
+    runs-on: ${{ matrix.platform.runner }}
+    steps:
+    - uses: hmarr/debug-action@cd1afbd7852b7ad7b1b7a9a1b03efebd3b0a1820
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+    - name: Install asdf binary
+      uses: ./asdf-install
+
+    - name: Check asdf version
+      run: |
+        asdf --version | grep -q "v0.19.0"
+      shell: bash
+
   asdf-tools-test:
     strategy:
       fail-fast: false

@@ -6,6 +6,7 @@ This repository contains several reusable composite GitHub Actions.
 
 | Module | Purpose |
 | --- | --- |
+| [`asdf-install`](./asdf-install/README.md) | Installs the `asdf` CLI and adds it to `PATH`. |
 | [`asdf-tools`](./asdf-tools/README.md) | Installs `asdf` and tool versions from `.tool-versions`. |
 | [`docker-build-push`](./docker-build-push/README.md) | Builds and pushes a Docker image, with optional Trivy scanning. |
 | [`npm-packages`](./npm-packages/README.md) | Runs `npm install` across one or more package directories. |

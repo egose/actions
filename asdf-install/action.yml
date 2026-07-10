@@ -1,0 +1,17 @@
+name: Install asdf
+description: Install the asdf CLI on Linux and macOS runners
+
+inputs:
+  version:
+    description: The version of asdf
+    default: v0.19.0
+    required: false
+
+runs:
+  using: composite
+  steps:
+  - name: Install asdf
+    run: bash "${{ github.action_path }}/install.sh"
+    shell: bash
+    env:
+      ASDF_VERSION: ${{ inputs.version }}
