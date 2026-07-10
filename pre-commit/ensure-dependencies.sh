@@ -19,9 +19,14 @@ if [ "$python_ready" = "true" ] && [ "$precommit_ready" = "true" ]; then
 fi
 
 if [ "$python_ready" != "true" ]; then
-  echo "➡️ Installing asdf and Python ${PRECOMMIT_PYTHON_VERSION}..."
-  bash "${PRECOMMIT_ACTION_PATH}/../asdf-install/install.sh"
+  echo "➡️ Installing Python ${PRECOMMIT_PYTHON_VERSION} with asdf..."
   export PATH="${RUNNER_TEMP}/asdf-bin:${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
+
+  if ! command -v asdf >/dev/null 2>&1; then
+    echo "❌ asdf is unavailable after bootstrap"
+    exit 1
+  fi
+
   asdf plugin add python https://github.com/danhper/asdf-python.git || true
   asdf install python "${PRECOMMIT_PYTHON_VERSION}"
 
