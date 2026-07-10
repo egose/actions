@@ -5,6 +5,7 @@ Runs `pre-commit` for the repository, optionally commits any hook-generated chan
 ## What It Does
 
 - Restores the `~/.cache/pre-commit` cache.
+- Reuses existing `python3` and `pre-commit`, or installs missing dependencies automatically.
 - Runs `pre-commit run --all-files` against the configured file.
 - Detects whether hooks changed tracked files.
 - Optionally commits and pushes those changes on `pull_request` and/or `push` events.
@@ -32,13 +33,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install pre-commit
-        run: pip install pre-commit
-
       - name: Run pre-commit action
         uses: egose/actions/precommit@main
 ```
@@ -62,17 +56,31 @@ jobs:
     config: .github/pre-commit-config.yaml
 ```
 
+### Pin Fallback Dependency Versions
+
+```yaml
+- name: Run pre-commit with pinned fallback tool versions
+  uses: egose/actions/precommit@main
+  with:
+    python-version: '3.14.6'
+    pre-commit-version: '4.6.0'
+```
+
 ## Inputs
 
 | Name | Required | Default | Description |
 | --- | --- | --- | --- |
 | `config` | No | `.pre-commit-config.yaml` | Path to the pre-commit configuration file. |
+| `python-version` | No | `3.14.6` | Python version to install with `asdf` when `python3` is missing. |
+| `pre-commit-version` | No | `4.6.0` | `pre-commit` version to install when `pre-commit` is missing. |
 | `commit-on-pr` | No | `"true"` | Commit and push hook changes when the workflow runs on `pull_request`. |
 | `commit-on-push` | No | `"false"` | Commit and push hook changes when the workflow runs on `push`. |
 
 ## Notes
 
-- This action does not install `pre-commit`; your workflow must do that before calling it.
+- If `python3` is missing, the action installs `asdf` and Python automatically before running hooks.
+- If `pre-commit` is missing, the action installs the configured version automatically with `pip --user`.
+- Existing `python3` and `pre-commit` installations are reused as-is.
 - Automatic push-back requires repository write permissions and a checkout that can push to the current branch.
 - On pull requests from forks, the push step may not be allowed by repository permissions or token restrictions.
 - When automatic commit is disabled for the current event, the action fails intentionally if hooks modified files.

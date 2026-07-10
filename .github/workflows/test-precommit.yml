@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
     - .github/workflows/test-precommit.yml
+    - asdf-install/**
     - precommit/**
     - tests/fixtures/precommit/**
   push:
@@ -11,6 +12,7 @@ on:
     - main
     paths:
     - .github/workflows/test-precommit.yml
+    - asdf-install/**
     - precommit/**
     - tests/fixtures/precommit/**
   workflow_dispatch:
@@ -20,13 +22,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-
-    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
-      with:
-        python-version: '3.12'
-
-    - name: Install pre-commit
-      run: pip install pre-commit
 
     - name: Run precommit action on clean fixture
       uses: ./precommit
@@ -39,13 +34,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-
-    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
-      with:
-        python-version: '3.12'
-
-    - name: Install pre-commit
-      run: pip install pre-commit
 
     - name: Make fixture fail formatting hooks
       shell: bash
