@@ -1,3 +1,14 @@
+## [0.11.0](https://github.com/egose/actions/compare/v0.10.1...v0.11.0) (2026-07-10)
+
+### Features
+
+* add dependency bootstrap for pre-commit action ([d3608c6](https://github.com/egose/actions/commit/d3608c60dc3757c569eca6653d41c68d6c3ede7f))
+* add oc-login composite action with dependency bootstrap ([c60cdaf](https://github.com/egose/actions/commit/c60cdafb72850103a1f2b94013cdb57ae3720ae8))
+* add standalone asdf installer action and reuse shared install scripts ([6e94225](https://github.com/egose/actions/commit/6e94225aa11a52824399ef27ff74d14c3ab62393))
+* allow pre-commit to install asdf when python is missing ([7d718bb](https://github.com/egose/actions/commit/7d718bbcfbe54a1f3577aa502857b766fb107329))
+* rename pre-commit action and add compatibility wrapper ([371d7f0](https://github.com/egose/actions/commit/371d7f072f3a08b4e5463348788bf0b8ef348cbe))
+* replace custom changelog script with toolkit binary ([aacbac2](https://github.com/egose/actions/commit/aacbac24a2e2e3e0277c37606c65c4ba9dcb714f))
+
 ## [0.10.1](https://github.com/egose/actions/compare/v0.10.0...v0.10.1) (2026-07-08)
 
 ### Bug Fixes
@@ -12,7 +23,7 @@
 
 ## [0.9.1](https://github.com/egose/actions/compare/v0.9.0...v0.9.1) (2026-07-07)
 
-### Docs
+### Documentation
 
 * update license and package author attribution ([d0704d3](https://github.com/egose/actions/commit/d0704d30240bd7c4299c97ad88d6ecb2b700d60e))
 
@@ -28,11 +39,11 @@
 
 * support macOS and ARM architectures ([f7ad1ed](https://github.com/egose/actions/commit/f7ad1ed55a6ccd9cf4e26e8a068dfcf7bc169658))
 
-### Docs
+### Documentation
 
 * update supported platforms and runner information in README ([401a84e](https://github.com/egose/actions/commit/401a84e115632bf42a52bd9b2648172a687f4e70))
 
-### Refactors
+### Code Refactoring
 
 * improve plugin parsing logic ([f7d1a92](https://github.com/egose/actions/commit/f7d1a92c3a02810e4f5bcde34d97456c0ee82021))
 
@@ -52,7 +63,7 @@
 * add npm-packages action ([4721f7a](https://github.com/egose/actions/commit/4721f7ac56f0cd357abf65ea6cddc1557e250b9e))
 * add pnpm-packages action ([365f01b](https://github.com/egose/actions/commit/365f01bf8fae5a561a95f62500bc5c58198700a6))
 
-### Docs
+### Documentation
 
 * register npm and pnpm actions in root README ([57148bd](https://github.com/egose/actions/commit/57148bd3c7cfc69fd39ddac74fd39bf52b836420))
 
@@ -94,12 +105,12 @@
 * resolve issue with sh ([3c35039](https://github.com/egose/actions/commit/3c3503972ec1d1e9562a0c44b2417b4409c59d91))
 * use 127.0.0.1 for local registry in docker tests ([8d9efe4](https://github.com/egose/actions/commit/8d9efe4582c41ad02f33d5329b6b2e0e35bc680b))
 
-### Docs
+### Documentation
 
 * overhaul module documentation and root index ([02c6db1](https://github.com/egose/actions/commit/02c6db1d87c34a809953b36291a4ffce37ca803c))
 * update license to Apache-2.0 ([35eba1a](https://github.com/egose/actions/commit/35eba1a3e33d0eb37396ed33476490ccd3e058c2))
 
-### Refactors
+### Code Refactoring
 
 * delegate root action to docker-build-push ([d70c38b](https://github.com/egose/actions/commit/d70c38b711ea6610449231662a39663b0ff6c285))
 
