@@ -1,3 +1,9 @@
+## [0.12.0](https://github.com/egose/actions/compare/v0.11.0...v0.12.0) (2026-07-12)
+
+### Features
+
+* install asdf within dependency checks ([2532ddb](https://github.com/egose/actions/commit/2532ddba05495ae2c4b7e1f6ed08a34adb33bd5c))
+
 ## [0.11.0](https://github.com/egose/actions/compare/v0.10.1...v0.11.0) (2026-07-10)
 
 ### Features
