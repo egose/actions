@@ -1,3 +1,17 @@
+## [0.13.0](https://github.com/egose/actions/compare/v0.12.0...v0.13.0) (2026-07-12)
+
+### Features
+
+* add compatibility wrapper for precommit action ([5395f1f](https://github.com/egose/actions/commit/5395f1f6aa69eb74ec79de64c0d90596a8d1aa44))
+
+### Bug Fixes
+
+* fix Python heredoc indentation in hook chmod helper ([c36a63d](https://github.com/egose/actions/commit/c36a63dd90db5d8ffa157970b4aea312c727f797))
+
+### Code Refactoring
+
+* consolidate pre-commit execution into shared runtime script ([988da7d](https://github.com/egose/actions/commit/988da7d81737b9870e3701586745db7c1e085d2d))
+
 ## [0.12.0](https://github.com/egose/actions/compare/v0.11.0...v0.12.0) (2026-07-12)
 
 ### Features
