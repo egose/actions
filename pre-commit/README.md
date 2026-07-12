@@ -2,7 +2,7 @@
 
 Runs `pre-commit` for the repository, optionally commits any hook-generated changes, and fails the job when changes are left uncommitted.
 
-`egose/actions/precommit@main` remains available as a compatibility wrapper, but new usage should prefer `egose/actions/pre-commit@main`.
+This is the canonical action. `egose/actions/precommit@main` remains available as a compatibility wrapper that delegates to this action.
 
 ## What It Does
 
