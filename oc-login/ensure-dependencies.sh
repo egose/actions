@@ -7,6 +7,8 @@ if command -v oc >/dev/null 2>&1; then
   exit 0
 fi
 
+echo "➡️ Installing asdf ${OCLOGIN_ASDF_VERSION}..."
+ASDF_VERSION="${OCLOGIN_ASDF_VERSION}" bash "${OCLOGIN_ACTION_PATH}/../asdf-install/install.sh"
 export PATH="${RUNNER_TEMP}/asdf-bin:${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 
 if ! command -v asdf >/dev/null 2>&1; then

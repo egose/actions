@@ -60,17 +60,13 @@ runs:
         echo "dependencies_ready=false" >> "$GITHUB_OUTPUT"
       fi
 
-  - name: Install asdf
-    if: steps.dependencies.outputs.python_ready != 'true'
-    uses: ./asdf-install
-    with:
-      version: ${{ inputs.asdf-version }}
-
   - name: Ensure python3 and pre-commit exist
     if: steps.dependencies.outputs.dependencies_ready != 'true'
     shell: bash
     run: bash "${{ github.action_path }}/ensure-dependencies.sh"
     env:
+      PRECOMMIT_ACTION_PATH: ${{ github.action_path }}
+      PRECOMMIT_ASDF_VERSION: ${{ inputs.asdf-version }}
       PRECOMMIT_PYTHON_VERSION: ${{ inputs.python-version }}
       PRECOMMIT_VERSION: ${{ inputs.pre-commit-version }}
 
