@@ -1,7 +1,7 @@
 {
   "name": "actions",
   "private": true,
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Reusable composite GitHub Actions for Egose repositories.",
   "homepage": "https://github.com/egose/actions",
   "repository": {
