@@ -46,17 +46,13 @@ runs:
         echo "oc_ready=false" >> "$GITHUB_OUTPUT"
       fi
 
-  - name: Install asdf
-    if: steps.oc.outputs.oc_ready != 'true'
-    uses: ./asdf-install
-    with:
-      version: ${{ inputs.asdf-version }}
-
   - name: Ensure oc exists
     if: steps.oc.outputs.oc_ready != 'true'
     shell: bash
     run: bash "${{ github.action_path }}/ensure-dependencies.sh"
     env:
+      OCLOGIN_ACTION_PATH: ${{ github.action_path }}
+      OCLOGIN_ASDF_VERSION: ${{ inputs.asdf-version }}
       OCLOGIN_OC_VERSION: ${{ inputs.oc-version }}
 
   - name: Log in to OpenShift
