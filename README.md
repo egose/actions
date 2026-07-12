@@ -13,6 +13,7 @@ This repository contains several reusable composite GitHub Actions.
 | [`oc-login`](./oc-login/README.md) | Ensures `oc` exists and logs into an OpenShift cluster. |
 | [`pnpm-packages`](./pnpm-packages/README.md) | Runs `pnpm install` across one or more package directories. |
 | [`pre-commit`](./pre-commit/README.md) | Runs `pre-commit` and can commit hook-generated changes. |
+| [`precommit`](./precommit/README.md) | Compatibility wrapper that delegates to [`pre-commit`](./pre-commit/README.md). |
 | [`release-tag`](./release-tag/README.md) | Generates release candidate PRs from semantic versioning rules. |
 | [`yarn-packages`](./yarn-packages/README.md) | Runs `yarn install` across one or more package directories. |
 
@@ -24,4 +25,4 @@ The root `action.yml` is a compatibility wrapper around [`docker-build-push`](./
 uses: egose/actions/docker-build-push@main
 ```
 
-The [`precommit`](./precommit/README.md) path remains as a compatibility wrapper around [`pre-commit`](./pre-commit/README.md).
+The [`precommit`](./precommit/README.md) path is a compatibility wrapper around [`pre-commit`](./pre-commit/README.md).

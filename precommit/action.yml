@@ -30,12 +30,22 @@ inputs:
 runs:
   using: composite
   steps:
-  - name: Delegate to pre-commit
-    uses: ./pre-commit
+  - name: Cache pre-commit environment
+    uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
     with:
-      config: ${{ inputs.config }}
-      asdf-version: ${{ inputs.asdf-version }}
-      python-version: ${{ inputs.python-version }}
-      pre-commit-version: ${{ inputs.pre-commit-version }}
-      commit-on-pr: ${{ inputs.commit-on-pr }}
-      commit-on-push: ${{ inputs.commit-on-push }}
+      path: ~/.cache/pre-commit
+      key: pre-commit-${{ inputs.python-version }}-${{ inputs.pre-commit-version }}-${{ hashFiles(inputs.config) }}
+      restore-keys: |
+        pre-commit-
+
+  - name: Run pre-commit
+    shell: bash
+    run: bash "${{ github.action_path }}/../pre-commit/run.sh"
+    env:
+      PRECOMMIT_ACTION_PATH: ${{ github.action_path }}/..
+      PRECOMMIT_CONFIG: ${{ inputs.config }}
+      PRECOMMIT_ASDF_VERSION: ${{ inputs.asdf-version }}
+      PRECOMMIT_PYTHON_VERSION: ${{ inputs.python-version }}
+      PRECOMMIT_VERSION: ${{ inputs.pre-commit-version }}
+      PRECOMMIT_COMMIT_ON_PR: ${{ inputs.commit-on-pr }}
+      PRECOMMIT_COMMIT_ON_PUSH: ${{ inputs.commit-on-push }}

@@ -1,6 +1,6 @@
 # Run and Handle Pre-Commit
 
-`precommit` remains available as a compatibility wrapper around [`pre-commit`](../pre-commit/README.md).
+`precommit` is a compatibility wrapper that delegates to [`pre-commit`](../pre-commit/README.md).
 
 New usage should prefer:
 
@@ -8,4 +8,4 @@ New usage should prefer:
 uses: egose/actions/pre-commit@main
 ```
 
-Existing `egose/actions/precommit@main` workflows continue to work and delegate to the renamed action.
+Existing `egose/actions/precommit@main` workflows continue to work and delegate to the canonical action.
