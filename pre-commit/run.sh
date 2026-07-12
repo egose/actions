@@ -65,16 +65,16 @@ if [ -f "$config_file" ]; then
     python3 -m pip install --quiet --user pyyaml
   fi
   python3 - "$config_file" <<'PY'
-  import sys, os, stat, yaml
-  with open(sys.argv[1]) as f:
-      cfg = yaml.safe_load(f) or {}
-  for repo in cfg.get("repos", []):
-      if repo.get("repo") == "local":
-          for hook in repo.get("hooks", []):
-              entry = hook.get("entry")
-              if entry and os.path.isfile(entry):
-                  os.chmod(entry, os.stat(entry).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-                  print(f"chmod +x {entry}")
+import sys, os, stat, yaml
+with open(sys.argv[1]) as f:
+    cfg = yaml.safe_load(f) or {}
+for repo in cfg.get("repos", []):
+    if repo.get("repo") == "local":
+        for hook in repo.get("hooks", []):
+            entry = hook.get("entry")
+            if entry and os.path.isfile(entry):
+                os.chmod(entry, os.stat(entry).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+                print(f"chmod +x {entry}")
 PY
 fi
 
