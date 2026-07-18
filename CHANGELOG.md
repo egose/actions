@@ -1,3 +1,9 @@
+## [0.14.0](https://github.com/egose/actions/compare/v0.13.0...v0.14.0) (2026-07-18)
+
+### Features
+
+* add metadata annotations to docker build action ([2943f76](https://github.com/egose/actions/commit/2943f76e334376854bd7a85d1922ae67027025a4))
+
 ## [0.13.0](https://github.com/egose/actions/compare/v0.12.0...v0.13.0) (2026-07-12)
 
 ### Features
