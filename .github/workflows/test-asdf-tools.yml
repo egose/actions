@@ -32,7 +32,6 @@ jobs:
           runner: macos-14
     runs-on: ${{ matrix.platform.runner }}
     steps:
-    - uses: hmarr/debug-action@cd1afbd7852b7ad7b1b7a9a1b03efebd3b0a1820
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
 
     - name: Install asdf binary
@@ -58,7 +57,6 @@ jobs:
           runner: macos-14
     runs-on: ${{ matrix.platform.runner }}
     steps:
-    - uses: hmarr/debug-action@cd1afbd7852b7ad7b1b7a9a1b03efebd3b0a1820
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
 
     - name: Install asdf tools in another directory

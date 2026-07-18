@@ -20,6 +20,9 @@ inputs:
   metadata-labels:
     description: List of labels as key-value pair attributes
     required: false
+  metadata-annotations:
+    description: List of annotations as key-value pair attributes
+    required: false
   docker-context:
     description: Docker build's context
     required: false
@@ -85,6 +88,7 @@ runs:
       images: ${{ inputs.registry-url }}/${{ inputs.image-name }}
       tags: ${{ inputs.metadata-tags }}
       labels: ${{ inputs.metadata-labels }}
+      annotations: ${{ inputs.metadata-annotations }}
 
   - name: Set up Docker Buildx
     # See https://github.com/docker/setup-buildx-action/commits/master/
@@ -119,6 +123,7 @@ runs:
         BUILD_TIMESTAMP=${{ env.BUILD_TIMESTAMP }}
         ${{ inputs.docker-args }}
       labels: ${{ steps.meta.outputs.labels }}
+      annotations: ${{ steps.meta.outputs.annotations }}
       outputs: ${{ inputs.docker-outputs }}
       cache-from: type=local,src=${{ env.DOCKER_LAYERS_PATH }}
       cache-to: type=local,dest=${{ env.DOCKER_LAYERS_PATH }}-new
