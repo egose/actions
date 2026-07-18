@@ -20,6 +20,12 @@ inputs:
   metadata-labels:
     description: List of labels as key-value pair attributes
     required: false
+  metadata-annotations:
+    description: List of annotations as key-value pair attributes
+    required: false
+  metadata-labels-annotations:
+    description: List of key-value pair attributes applied to both labels and annotations
+    required: false
   docker-context:
     description: Docker build's context
     required: false
@@ -79,6 +85,8 @@ runs:
       image-name: ${{ inputs.image-name }}
       metadata-tags: ${{ inputs.metadata-tags }}
       metadata-labels: ${{ inputs.metadata-labels }}
+      metadata-annotations: ${{ inputs.metadata-annotations }}
+      metadata-labels-annotations: ${{ inputs.metadata-labels-annotations }}
       docker-context: ${{ inputs.docker-context }}
       docker-file: ${{ inputs.docker-file }}
       docker-args: ${{ inputs.docker-args }}

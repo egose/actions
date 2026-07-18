@@ -23,6 +23,9 @@ inputs:
   metadata-annotations:
     description: List of annotations as key-value pair attributes
     required: false
+  metadata-labels-annotations:
+    description: List of key-value pair attributes applied to both labels and annotations
+    required: false
   docker-context:
     description: Docker build's context
     required: false
@@ -87,8 +90,12 @@ runs:
     with:
       images: ${{ inputs.registry-url }}/${{ inputs.image-name }}
       tags: ${{ inputs.metadata-tags }}
-      labels: ${{ inputs.metadata-labels }}
-      annotations: ${{ inputs.metadata-annotations }}
+      labels: |
+        ${{ inputs.metadata-labels-annotations }}
+        ${{ inputs.metadata-labels }}
+      annotations: |
+        ${{ inputs.metadata-labels-annotations }}
+        ${{ inputs.metadata-annotations }}
 
   - name: Set up Docker Buildx
     # See https://github.com/docker/setup-buildx-action/commits/master/
