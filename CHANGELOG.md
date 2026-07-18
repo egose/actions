@@ -1,3 +1,9 @@
+## [0.15.0](https://github.com/egose/actions/compare/v0.14.0...v0.15.0) (2026-07-18)
+
+### Features
+
+* add shared metadata inputs for labels and annotations ([5437233](https://github.com/egose/actions/commit/5437233018cc885703ece8b5ecf8367b586ce355))
+
 ## [0.14.0](https://github.com/egose/actions/compare/v0.13.0...v0.14.0) (2026-07-18)
 
 ### Features
