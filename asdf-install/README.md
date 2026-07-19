@@ -31,17 +31,17 @@ jobs:
 ### Pin a Specific Version
 
 ```yaml
-- name: Install asdf v0.19.0
+- name: Install asdf v0.20.0
   uses: egose/actions/asdf-install@main
   with:
-    version: v0.19.0
+    version: v0.20.0
 ```
 
 ## Inputs
 
 | Name | Required | Default | Description |
 | --- | --- | --- | --- |
-| `version` | No | `v0.19.0` | Version of the `asdf` binary to install. |
+| `version` | No | `v0.20.0` | Version of the `asdf` binary to install. |
 
 ## Notes
 

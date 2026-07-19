@@ -39,7 +39,7 @@ jobs:
 
     - name: Check asdf version
       run: |
-        asdf --version | grep -q "v0.19.0"
+        asdf --version | grep -q "v0.20.0"
       shell: bash
 
   asdf-tools-test:

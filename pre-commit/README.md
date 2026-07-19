@@ -64,7 +64,7 @@ jobs:
 - name: Run pre-commit with pinned fallback tool versions
   uses: egose/actions/pre-commit@main
   with:
-    asdf-version: 'v0.19.0'
+    asdf-version: 'v0.20.0'
     python-version: '3.14.6'
     pre-commit-version: '4.6.0'
 ```
@@ -74,7 +74,7 @@ jobs:
 | Name | Required | Default | Description |
 | --- | --- | --- | --- |
 | `config` | No | `.pre-commit-config.yaml` | Path to the pre-commit configuration file. |
-| `asdf-version` | No | `v0.19.0` | `asdf` version to install when `python3` is missing. |
+| `asdf-version` | No | `v0.20.0` | `asdf` version to install when `python3` is missing. |
 | `python-version` | No | `3.14.6` | Python version to install with `asdf` when `python3` is missing. |
 | `pre-commit-version` | No | `4.6.0` | `pre-commit` version to install when `pre-commit` is missing. |
 | `commit-on-pr` | No | `"true"` | Commit and push hook changes when the workflow runs on `pull_request`. |
