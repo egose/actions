@@ -45,7 +45,7 @@ Ensures `oc` is available on the runner and logs into an OpenShift cluster.
   with:
     openshift_server_url: ${{ secrets.OPENSHIFT_SERVER }}
     openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
-    asdf-version: v0.19.0
+    asdf-version: v0.20.0
     oc-version: latest
 ```
 
@@ -60,7 +60,7 @@ Ensures `oc` is available on the runner and logs into an OpenShift cluster.
 | `insecure_skip_tls_verify` | No | `"false"` | Skip TLS verification when `certificate_authority_data` is not provided. |
 | `certificate_authority_data` | No | `""` | PEM or base64-encoded PEM certificate authority data passed to `oc login`. |
 | `namespace` | No | `""` | Namespace to select with `oc project` after login. |
-| `asdf-version` | No | `v0.19.0` | `asdf` version to install when `oc` is missing. |
+| `asdf-version` | No | `v0.20.0` | `asdf` version to install when `oc` is missing. |
 | `oc-version` | No | `latest` | `oc` version to install with `asdf` when `oc` is missing. |
 
 ## Notes

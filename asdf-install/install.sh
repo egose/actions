@@ -2,7 +2,7 @@
 
 set -e
 
-ASDF_VERSION="${ASDF_VERSION:-v0.19.0}"
+ASDF_VERSION="${ASDF_VERSION:-v0.20.0}"
 install_dir="${RUNNER_TEMP}/asdf-bin"
 shims_dir="${ASDF_DATA_DIR:-$HOME/.asdf}/shims"
 

@@ -53,7 +53,7 @@ jobs:
 
 | Name | Required | Default | Description |
 | --- | --- | --- | --- |
-| `version` | No | `v0.19.0` | Version of the `asdf` binary to install. |
+| `version` | No | `v0.20.0` | Version of the `asdf` binary to install. |
 | `plugins` | No | `""` | Newline-separated list of extra plugins in `<plugin>=<url>` format. |
 | `context` | No | `.` | Directory that contains the `.tool-versions` file. |
 

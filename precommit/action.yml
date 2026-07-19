@@ -9,7 +9,7 @@ inputs:
   asdf-version:
     description: asdf version to install when python3 is missing
     required: false
-    default: v0.19.0
+    default: v0.20.0
   python-version:
     description: Python version to install with asdf when python3 is missing
     required: false
