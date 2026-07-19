@@ -1,3 +1,9 @@
+## [0.16.0](https://github.com/egose/actions/compare/v0.15.0...v0.16.0) (2026-07-19)
+
+### Features
+
+* bump default asdf version to v0.20.0 across actions ([f0d504b](https://github.com/egose/actions/commit/f0d504b4065fa1e41c16e6538e92a32cfddb3998))
+
 ## [0.15.0](https://github.com/egose/actions/compare/v0.14.0...v0.15.0) (2026-07-18)
 
 ### Features
