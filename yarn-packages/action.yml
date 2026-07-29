@@ -18,48 +18,32 @@ inputs:
 runs:
   using: composite
   steps:
-  - name: Cache tools
+  - name: Get cache metadata
+    run: |
+      node_version="$(node --version)"
+      echo "NODE_VERSION=${node_version#v}" >> "$GITHUB_ENV"
+      echo "YARN_VERSION=$(yarn --version)" >> "$GITHUB_ENV"
+    shell: bash
+
+  - name: Cache Yarn packages
     # see https://github.com/actions/cache/commits/main/
     uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
     with:
       path: |
-        **/node_modules
-      key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
+        ~/.cache/yarn
+        ~/.yarn/berry/cache
+        **/.yarn/cache
+      key: yarn-${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-${{ env.YARN_VERSION }}-${{ hashFiles('**/yarn.lock') }}
+      restore-keys: |
+        yarn-${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-${{ env.YARN_VERSION }}-
+        yarn-${{ runner.os }}-node-${{ env.NODE_VERSION }}-
+        yarn-${{ runner.os }}-
 
   - name: Install Packages
-    run: |
-      paths_str=$'${{ inputs.paths }}'
-      paths=(${paths_str//$'\n'/ })
-      frozen='${{ inputs.frozen }}'
-      ignore_scripts='${{ inputs.ignore-scripts }}'
-      dir="$(pwd)"
-
-      for path in "${paths[@]}"
-      do
-        target="${dir}/${path}"
-        echo "${target}"
-        if [ ! -d "${target}" ]; then
-            continue
-        fi
-
-        cd "${target}"
-        if [ "${ignore_scripts}" = 'true' ]; then
-          yarn_version="$(yarn --version)"
-          yarn_major="${yarn_version%%.*}"
-
-          if [ "${frozen}" = 'true' ] && [ "${yarn_major}" -ge 2 ] 2>/dev/null; then
-            YARN_ENABLE_SCRIPTS=false yarn install --frozen-lockfile
-          elif [ "${frozen}" = 'true' ]; then
-            yarn install --frozen-lockfile --ignore-scripts
-          elif [ "${yarn_major}" -ge 2 ] 2>/dev/null; then
-            YARN_ENABLE_SCRIPTS=false yarn install
-          else
-            yarn install --ignore-scripts
-          fi
-        elif [ "${frozen}" = 'true' ]; then
-          yarn install --frozen-lockfile
-        else
-          yarn install
-        fi
-      done
+    run: bash "${{ github.action_path }}/../scripts/install-packages.sh"
     shell: bash
+    env:
+      PACKAGE_MANAGER: yarn
+      PACKAGE_FROZEN: ${{ inputs.frozen }}
+      PACKAGE_IGNORE_SCRIPTS: ${{ inputs.ignore-scripts }}
+      PACKAGE_PATHS: ${{ inputs.paths }}

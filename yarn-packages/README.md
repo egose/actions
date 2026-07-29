@@ -4,7 +4,7 @@ Installs dependencies with Yarn for one or more directories that contain a `pack
 
 ## What It Does
 
-- Restores a cache for `**/node_modules` keyed by all `yarn.lock` files.
+- Restores Yarn package caches keyed by Node.js version, Yarn version, and all `yarn.lock` files.
 - Iterates through the configured directories.
 - Runs `yarn install` in each existing directory.
 - Optionally runs `yarn install --frozen-lockfile` for strict CI installs.
@@ -77,7 +77,8 @@ jobs:
 
 - This action does not install Node.js or Yarn. Set those up earlier in the workflow.
 - Missing directories are skipped.
-- The cache key is based on `hashFiles('**/yarn.lock')`, so any lockfile change refreshes the cache.
+- The cache stores Yarn cache directories instead of `node_modules` to avoid restoring incompatible installed artifacts.
+- The cache key includes the active Node.js version, Yarn version, and `hashFiles('**/yarn.lock')`, so dependency runtime changes refresh the cache.
 - `frozen: 'true'` requires matching `yarn.lock` files to already exist for each target directory.
 - `ignore-scripts: 'true'` checks the active Yarn major version in each target directory and chooses the compatible mechanism.
 - This action has no outputs.

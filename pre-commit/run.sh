@@ -89,7 +89,7 @@ else
   echo "No pre-commit changes detected."
 fi
 
-event_name="${GITHUB_EVENT_NAME:-}"
+event_name="${PRECOMMIT_EVENT_NAME:-${GITHUB_EVENT_NAME:-}}"
 commit_on_pr="${PRECOMMIT_COMMIT_ON_PR:-false}"
 commit_on_push="${PRECOMMIT_COMMIT_ON_PUSH:-false}"
 
@@ -103,12 +103,18 @@ fi
 if [ "$made_changes" = "true" ] && [ "$allow_commit" = "true" ]; then
   git config user.name "github-actions[bot]"
   git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-  head_ref="${GITHUB_HEAD_REF:-}"
+  head_ref="${PRECOMMIT_HEAD_REF:-}"
+  if [ -z "$head_ref" ]; then
+    head_ref="${PRECOMMIT_REF_NAME:-}"
+  fi
+  if [ -z "$head_ref" ]; then
+    head_ref="${GITHUB_HEAD_REF:-}"
+  fi
   if [ -z "$head_ref" ]; then
     head_ref="${GITHUB_REF_NAME:-}"
   fi
   git checkout "$head_ref"
-  git add -u
+  git add -A
   git commit -m "chore(pre-commit): apply automatic formatting and linting fixes"
   git push origin "$head_ref"
 

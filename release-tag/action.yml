@@ -56,154 +56,62 @@ runs:
   - name: Determine Next Tag Version
     id: new-tag
     shell: bash
-    run: |
-      NEXT_VERSION=""
-      INPUT_TAG="${{ inputs.tag }}"
-
-      if [ -n "$INPUT_TAG" ]; then
-        if ! echo "$INPUT_TAG" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-          echo "::error::Provided tag '$INPUT_TAG' does not follow semantic versioning"
-          exit 1
-        fi
-        NEXT_VERSION="${INPUT_TAG//v}"
-      else
-        LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-        if [ -z "$LAST_TAG" ]; then
-          echo "::error::No previous tag found and no tag input provided."
-          exit 1
-        fi
-
-        if ! [[ $LAST_TAG =~ v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
-           echo "::error::Last tag '$LAST_TAG' does not follow 'vX.Y.Z' format."
-           exit 1
-        fi
-
-        MAJOR="${BASH_REMATCH[1]}"
-        MINOR="${BASH_REMATCH[2]}"
-        PATCH="${BASH_REMATCH[3]}"
-        COMMIT_MESSAGES=$(git log ${LAST_TAG}..HEAD --pretty=format:%B)
-
-        if echo "$COMMIT_MESSAGES" | grep -qE '(BREAKING CHANGE:|^feat\([^\)]+\)!:|^fix\([^\)]+\)!:|!:)'; then
-            BUMP="major"
-        elif echo "$COMMIT_MESSAGES" | grep -qE '^feat(\(.+\))?:'; then
-            BUMP="minor"
-        else
-            BUMP="patch"
-        fi
-
-        case "$BUMP" in
-          major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
-          minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
-          patch) PATCH=$((PATCH + 1)) ;;
-        esac
-        NEXT_VERSION="${MAJOR}.${MINOR}.${PATCH}"
-      fi
-      echo "tag=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
+    run: bash "${{ github.action_path }}/determine-tag.sh"
+    env:
+      RELEASE_TAG_INPUT: ${{ inputs.tag }}
 
   - name: Create Tag and Changelog with release-it
     id: release-it
     shell: bash
     env:
+      RELEASE_TAG_VERSION: ${{ steps.new-tag.outputs.tag }}
+      RELEASE_BASE_BRANCH: ${{ github.ref_name }}
+      RELEASE_IT_PATH: ${{ inputs.release-it-path }}
       GIT_USER_NAME: ${{ inputs.git-user-name }}
       GIT_USER_EMAIL: ${{ inputs.git-user-email }}
       SIGN_COMMIT: ${{ inputs.sign-commit }}
       GPG_PRIVATE_KEY: ${{ inputs.gpg-private-key }}
       GPG_PASSPHRASE: ${{ inputs.gpg-passphrase }}
-    run: |
-      TAG_VERSION="v${{ steps.new-tag.outputs.tag }}"
-      git config user.name "$GIT_USER_NAME"
-      git config user.email "$GIT_USER_EMAIL"
-
-      if [ "$SIGN_COMMIT" = 'true' ]; then
-        mkdir -p "$HOME/.gnupg"
-        chmod 700 "$HOME/.gnupg"
-        printf 'pinentry-mode loopback\n' >> "$HOME/.gnupg/gpg.conf"
-        printf 'allow-loopback-pinentry\n' >> "$HOME/.gnupg/gpg-agent.conf"
-
-        if [ -n "$GPG_PRIVATE_KEY" ]; then
-          key_file=$(mktemp)
-          printf '%s' "$GPG_PRIVATE_KEY" > "$key_file"
-
-          if [ -n "$GPG_PASSPHRASE" ]; then
-            gpg --batch --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" --import "$key_file"
-          else
-            gpg --batch --import "$key_file"
-          fi
-
-          rm -f "$key_file"
-        fi
-
-        signing_key=$(gpg --list-secret-keys --with-colons --fingerprint | grep '^fpr:' | head -n 1 | cut -d: -f10)
-        if [ -z "$signing_key" ]; then
-          echo '::error::sign-commit is enabled but no GPG secret key is available. Provide gpg-private-key or import a key before running this action.'
-          exit 1
-        fi
-
-        git config user.signingkey "$signing_key"
-        git config commit.gpgsign true
-
-        if [ -n "$GPG_PASSPHRASE" ]; then
-          gpg_wrapper=$(mktemp)
-          printf '%s\n' '#!/usr/bin/env bash' 'exec gpg --batch --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" "$@"' > "$gpg_wrapper"
-          chmod 700 "$gpg_wrapper"
-          export GPG_PASSPHRASE
-          git config gpg.program "$gpg_wrapper"
-        fi
-
-        gpgconf --kill gpg-agent || true
-      fi
-
-      branch="changelog/${{ steps.new-tag.outputs.tag }}"
-      BASE_BRANCH="${{ github.ref_name }}"
-
-      git push origin --delete "$branch" || true
-      git branch -D "$branch" || true
-      git checkout -b "$branch"
-      git push --set-upstream origin "$branch"
-
-      release_it_args=("${{ steps.new-tag.outputs.tag }}" --ci)
-      if [ "$SIGN_COMMIT" = 'true' ]; then
-        release_it_args+=(--git.commitArgs=--gpg-sign)
-      fi
-
-      ${{ inputs.release-it-path }} "${release_it_args[@]}"
-      git push origin "$branch"
-
-      pr_title="chore(release): release candidate $TAG_VERSION"
-      pr_body=$(git tag -l --format='%(contents)' "$TAG_VERSION")
-
-      echo "head_branch=$branch" >> "$GITHUB_OUTPUT"
-      echo "base_branch=$BASE_BRANCH" >> "$GITHUB_OUTPUT"
-      echo "version=$TAG_VERSION" >> "$GITHUB_OUTPUT"
-      echo "pr_title=$pr_title" >> "$GITHUB_OUTPUT"
-
-      EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-      echo "pr_body<<$EOF" >> "$GITHUB_OUTPUT"
-      echo "$pr_body" >> "$GITHUB_OUTPUT"
-      echo "$EOF" >> "$GITHUB_OUTPUT"
+    run: bash "${{ github.action_path }}/create-release-pr-branch.sh"
 
   - name: Create Pull Request
-    uses: actions/github-script@v9.0.0
+    uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+    env:
+      AUTO_MERGE_PR: ${{ inputs.auto-merge-pr }}
+      DELETE_MERGED_BRANCH: ${{ inputs.delete-merged-branch }}
+      HEAD_BRANCH: ${{ steps.release-it.outputs.head_branch }}
+      BASE_BRANCH: ${{ steps.release-it.outputs.base_branch }}
+      PR_TITLE: ${{ steps.release-it.outputs.pr_title }}
+      PR_BODY: ${{ steps.release-it.outputs.pr_body }}
+      VERSION: ${{ steps.release-it.outputs.version }}
     with:
       github-token: ${{ inputs.github-token }}
       script: |
         const { repo, owner } = context.repo;
-        const autoMergePr = `${{ inputs.auto-merge-pr }}` === 'true';
-        const deleteMergedBranch = `${{ inputs.delete-merged-branch }}` === 'true';
-        const headBranch = `${{ steps.release-it.outputs.head_branch }}`;
+        const autoMergePr = process.env.AUTO_MERGE_PR === 'true';
+        const deleteMergedBranch = process.env.DELETE_MERGED_BRANCH === 'true';
+        const headBranch = process.env.HEAD_BRANCH;
         const pr = await github.rest.pulls.create({
           owner,
           repo,
           head: headBranch,
-          base: `${{ steps.release-it.outputs.base_branch }}`,
-          title: `${{ steps.release-it.outputs.pr_title }}`,
-          body: `### Release Candidate Details\n\n${{ steps.release-it.outputs.pr_body }}\n\n---\n\n> ℹ️ **This PR was automatically generated.**`
+          base: process.env.BASE_BRANCH,
+          title: process.env.PR_TITLE,
+          body: [
+            '### Release Candidate Details',
+            '',
+            process.env.PR_BODY || '',
+            '',
+            '---',
+            '',
+            '> This PR was automatically generated.'
+          ].join('\n')
         });
         await github.rest.issues.addLabels({
           owner,
           repo,
           issue_number: pr.data.number,
-          labels: ['changelog', 'release-candidate', `${{ steps.release-it.outputs.version }}`]
+          labels: ['changelog', 'release-candidate', process.env.VERSION]
         });
 
         if (autoMergePr) {

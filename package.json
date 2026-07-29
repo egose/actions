@@ -24,6 +24,7 @@
     "pre-commit": "pre-commit run --all-files",
     "precommit": "npm run pre-commit",
     "lint": "npm run actionlint && npm run pre-commit",
+    "test:shell": "bash tests/test-install-packages.sh && bash tests/test-release-tag.sh",
     "release": "release-it",
     "changelog": "repo-toolkit-changelog"
   },

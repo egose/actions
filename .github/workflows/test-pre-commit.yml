@@ -70,3 +70,50 @@ jobs:
       run: |
         test "$PRECOMMIT_OUTCOME" = "failure"
         test "$(cat tests/fixtures/pre-commit/sample.txt)" = "fixture with trailing spaces"
+
+  pre-commit-autocommit-includes-new-files:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      with:
+        fetch-depth: 0
+
+    - name: Create isolated git remote and working copy
+      shell: bash
+      run: |
+        remote_dir="$RUNNER_TEMP/precommit-remote.git"
+        work_dir="$RUNNER_TEMP/precommit-work"
+
+        git init --bare --initial-branch=main "$remote_dir"
+        git clone "$GITHUB_WORKSPACE" "$work_dir"
+        git -C "$work_dir" checkout -b test-precommit-autofix
+        git -C "$work_dir" remote set-url origin "$remote_dir"
+        git -C "$work_dir" push --set-upstream origin test-precommit-autofix
+
+    - name: Run pre-commit with auto-commit enabled in isolated clone
+      shell: bash
+      working-directory: ${{ runner.temp }}/precommit-work
+      env:
+        PRECOMMIT_ACTION_PATH: ${{ runner.temp }}/precommit-work/pre-commit
+        PRECOMMIT_CONFIG: tests/fixtures/pre-commit/generated-file-config.yaml
+        PRECOMMIT_ASDF_VERSION: v0.20.0
+        PRECOMMIT_PYTHON_VERSION: 3.14.6
+        PRECOMMIT_VERSION: 4.6.0
+        PRECOMMIT_EVENT_NAME: push
+        PRECOMMIT_COMMIT_ON_PR: 'false'
+        PRECOMMIT_COMMIT_ON_PUSH: 'true'
+        PRECOMMIT_REF_NAME: test-precommit-autofix
+      run: bash pre-commit/run.sh
+
+    - name: Verify generated file was committed and pushed
+      shell: bash
+      run: |
+        work_dir="$RUNNER_TEMP/precommit-work"
+        remote_dir="$RUNNER_TEMP/precommit-remote.git"
+        remote_head="$(git --git-dir "$remote_dir" rev-parse refs/heads/test-precommit-autofix)"
+        local_head="$(git -C "$work_dir" rev-parse HEAD)"
+
+        test -f "$work_dir/tests/fixtures/pre-commit/generated.txt"
+        test "$remote_head" = "$local_head"
+        test -z "$(git -C "$work_dir" status --short)"
+        git -C "$work_dir" log --format=%s -1 | grep -q '^chore(pre-commit): apply automatic formatting and linting fixes$'

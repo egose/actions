@@ -8,6 +8,7 @@ Installs `asdf`, restores the `~/.asdf` cache, and installs the tool versions de
 - Restores and updates the `~/.asdf` directory with `actions/cache`.
 - Adds plugins listed in `.tool-versions`.
 - Optionally adds extra plugins from the `plugins` input.
+- Optionally updates installed plugin definitions before tool installation.
 - Installs the requested tool versions and runs `asdf reshim`.
 
 ## Usage
@@ -49,12 +50,22 @@ jobs:
       poetry=https://github.com/asdf-community/asdf-poetry.git
 ```
 
+### Refresh Plugin Definitions
+
+```yaml
+- name: Install tools and refresh plugin definitions
+  uses: egose/actions/asdf-tools@main
+  with:
+    update-plugins: 'true'
+```
+
 ## Inputs
 
 | Name | Required | Default | Description |
 | --- | --- | --- | --- |
 | `version` | No | `v0.20.0` | Version of the `asdf` binary to install. |
 | `plugins` | No | `""` | Newline-separated list of extra plugins in `<plugin>=<url>` format. |
+| `update-plugins` | No | `'false'` | Runs `asdf plugin update --all` before installing tools. |
 | `context` | No | `.` | Directory that contains the `.tool-versions` file. |
 
 ## Notes
@@ -62,4 +73,4 @@ jobs:
 - This action expects a `.tool-versions` file to exist in the selected `context` directory.
 - The action currently supports Linux and macOS runners on `amd64` and `arm64`.
 - Windows runners are not currently supported.
-- Cache invalidation is based on `hashFiles('**/.tool-versions')`, so updates to any `.tool-versions` file in the repository will refresh the cache key.
+- Cache invalidation is based on the `.tool-versions` file inside the selected `context`, so unrelated tool-version changes elsewhere in the repository do not invalidate the cache.

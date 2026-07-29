@@ -56,3 +56,23 @@ jobs:
         paths: |
           tests/fixtures/yarn-packages/app-one
           tests/fixtures/yarn-packages/app-two
+
+    - name: Copy fixtures into paths with spaces
+      shell: bash
+      run: |
+        mkdir -p "tests/fixtures/yarn packages"
+        cp -R tests/fixtures/yarn-packages/app-one "tests/fixtures/yarn packages/app one"
+        cp -R tests/fixtures/yarn-packages/app-two "tests/fixtures/yarn packages/app two"
+
+    - name: Install package fixtures from paths with spaces
+      uses: ./yarn-packages
+      with:
+        paths: |
+          tests/fixtures/yarn packages/app one
+          tests/fixtures/yarn packages/app two
+
+    - name: Verify yarn install outputs for paths with spaces
+      shell: bash
+      run: |
+        test -f "tests/fixtures/yarn packages/app one/yarn.lock"
+        test -f "tests/fixtures/yarn packages/app two/yarn.lock"

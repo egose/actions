@@ -4,7 +4,7 @@ Installs dependencies with npm for one or more directories that contain a `packa
 
 ## What It Does
 
-- Restores a cache for `**/node_modules` keyed by all `package-lock.json` files.
+- Restores the npm package cache keyed by Node.js version and all `package-lock.json` files.
 - Iterates through the configured directories.
 - Runs `npm install` in each existing directory.
 - Optionally runs `npm ci` for strict CI installs.
@@ -75,7 +75,8 @@ jobs:
 
 - This action does not install Node.js. Set it up earlier in the workflow.
 - Missing directories are skipped.
-- The cache key is based on `hashFiles('**/package-lock.json')`, so any lockfile change refreshes the cache.
+- The cache stores `~/.npm`, not `node_modules`, to avoid restoring incompatible installed artifacts across Node.js versions.
+- The cache key includes the active Node.js version and `hashFiles('**/package-lock.json')`, so lockfile or runtime changes refresh the cache.
 - `frozen: 'true'` requires matching `package-lock.json` files to already exist for each target directory.
 - `ignore-scripts: 'true'` applies to both normal installs and frozen installs.
 - This action has no outputs.

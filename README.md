@@ -26,3 +26,12 @@ uses: egose/actions/docker-build-push@main
 ```
 
 The [`precommit`](./precommit/README.md) path is a compatibility wrapper around [`pre-commit`](./pre-commit/README.md).
+
+## Validation
+
+Run the repository checks locally with:
+
+```sh
+npm run actionlint
+npm run test:shell
+```
