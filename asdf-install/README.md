@@ -6,6 +6,7 @@ Installs the `asdf` CLI on Linux and macOS runners and adds both the binary dire
 
 - Detects the current runner OS and CPU architecture.
 - Downloads the matching `asdf` release asset from GitHub.
+- Verifies the downloaded release asset against the published SHA-256 digest from the GitHub release metadata.
 - Installs the `asdf` binary into the runner temp directory.
 - Adds the binary directory and `${ASDF_DATA_DIR:-$HOME/.asdf}/shims` to `PATH`.
 
