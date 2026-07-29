@@ -75,6 +75,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      with:
+        fetch-depth: 0
 
     - name: Create isolated git remote and working copy
       shell: bash
@@ -82,7 +84,7 @@ jobs:
         remote_dir="$RUNNER_TEMP/precommit-remote.git"
         work_dir="$RUNNER_TEMP/precommit-work"
 
-        git init --bare "$remote_dir"
+        git init --bare --initial-branch=main "$remote_dir"
         git clone "$GITHUB_WORKSPACE" "$work_dir"
         git -C "$work_dir" checkout -b test-precommit-autofix
         git -C "$work_dir" remote set-url origin "$remote_dir"
