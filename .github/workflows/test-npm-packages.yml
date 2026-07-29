@@ -53,3 +53,23 @@ jobs:
         paths: |
           tests/fixtures/npm-packages/app-one
           tests/fixtures/npm-packages/app-two
+
+    - name: Copy fixtures into paths with spaces
+      shell: bash
+      run: |
+        mkdir -p "tests/fixtures/npm packages"
+        cp -R tests/fixtures/npm-packages/app-one "tests/fixtures/npm packages/app one"
+        cp -R tests/fixtures/npm-packages/app-two "tests/fixtures/npm packages/app two"
+
+    - name: Install package fixtures from paths with spaces
+      uses: ./npm-packages
+      with:
+        paths: |
+          tests/fixtures/npm packages/app one
+          tests/fixtures/npm packages/app two
+
+    - name: Verify npm install outputs for paths with spaces
+      shell: bash
+      run: |
+        test -f "tests/fixtures/npm packages/app one/package-lock.json"
+        test -f "tests/fixtures/npm packages/app two/package-lock.json"
