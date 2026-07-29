@@ -94,15 +94,15 @@ jobs:
       shell: bash
       working-directory: ${{ runner.temp }}/precommit-work
       env:
-        GITHUB_EVENT_NAME: push
-        GITHUB_REF_NAME: test-precommit-autofix
         PRECOMMIT_ACTION_PATH: ${{ runner.temp }}/precommit-work/pre-commit
         PRECOMMIT_CONFIG: tests/fixtures/pre-commit/generated-file-config.yaml
         PRECOMMIT_ASDF_VERSION: v0.20.0
         PRECOMMIT_PYTHON_VERSION: 3.14.6
         PRECOMMIT_VERSION: 4.6.0
+        PRECOMMIT_EVENT_NAME: push
         PRECOMMIT_COMMIT_ON_PR: 'false'
         PRECOMMIT_COMMIT_ON_PUSH: 'true'
+        PRECOMMIT_REF_NAME: test-precommit-autofix
       run: bash pre-commit/run.sh
 
     - name: Verify generated file was committed and pushed
