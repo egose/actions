@@ -1,27 +1,30 @@
-name: Validate GitHub Actions
+name: Test shell scripts
 
 on:
   pull_request:
     paths:
-    - .github/workflows/**
-    - action.yml
-    - '*/action.yml'
+    - .github/workflows/test-shell-scripts.yml
     - scripts/**
     - release-tag/**
+    - tests/**
+    - package.json
   push:
     branches:
     - main
     paths:
-    - .github/workflows/**
-    - action.yml
-    - '*/action.yml'
+    - .github/workflows/test-shell-scripts.yml
     - scripts/**
     - release-tag/**
+    - tests/**
+    - package.json
   workflow_dispatch:
 
 jobs:
-  actionlint:
+  shell-tests:
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-    - uses: rhysd/actionlint@914e7df21a07ef503a81201c76d2b11c789d3fca
+
+    - name: Run shell helper tests
+      run: npm run test:shell
+      shell: bash

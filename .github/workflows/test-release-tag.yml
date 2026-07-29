@@ -1,0 +1,40 @@
+name: Test action release-tag
+
+on:
+  pull_request:
+    paths:
+    - .github/workflows/test-release-tag.yml
+    - release-tag/**
+  push:
+    branches:
+    - main
+    paths:
+    - .github/workflows/test-release-tag.yml
+    - release-tag/**
+  workflow_dispatch:
+
+jobs:
+  release-tag-pr-body-is-treated-as-data:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+    - name: Verify PR body is passed through env instead of injected into script source
+      shell: bash
+      run: |
+        python3 - <<'PY'
+        from pathlib import Path
+
+        text = Path("release-tag/action.yml").read_text()
+        workflow_expr = "${" + "{ steps.release-it.outputs.pr_body }}"
+
+        if f"PR_BODY: {workflow_expr}" not in text:
+            raise SystemExit("missing PR_BODY env wiring")
+
+        script = text.split("script: |", 1)[1]
+        if "process.env.PR_BODY" not in script:
+            raise SystemExit("script does not read PR body from env")
+
+        if workflow_expr in script:
+            raise SystemExit("unsafe PR body interpolation still exists in script block")
+        PY

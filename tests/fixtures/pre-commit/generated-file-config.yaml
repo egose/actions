@@ -1,0 +1,9 @@
+repos:
+- repo: local
+  hooks:
+  - id: create-generated-file
+    name: create-generated-file
+    entry: tests/fixtures/pre-commit/create-generated-file.sh
+    language: script
+    pass_filenames: false
+    always_run: true

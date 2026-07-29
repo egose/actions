@@ -108,7 +108,7 @@ if [ "$made_changes" = "true" ] && [ "$allow_commit" = "true" ]; then
     head_ref="${GITHUB_REF_NAME:-}"
   fi
   git checkout "$head_ref"
-  git add -u
+  git add -A
   git commit -m "chore(pre-commit): apply automatic formatting and linting fixes"
   git push origin "$head_ref"
 
