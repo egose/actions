@@ -7,7 +7,11 @@ inputs:
     default: v0.20.0
     required: false
   plugins:
-    description: List of additional plugins (e.g., <plugin>=<url>, comma-separated)
+    description: Newline-separated list of additional plugins (e.g., <plugin>=<url>)
+    required: false
+  update-plugins:
+    description: Update installed asdf plugin definitions before installing tools
+    default: 'false'
     required: false
   context:
     description: Directory of the file .tool-versions located
@@ -28,7 +32,7 @@ runs:
     uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
     with:
       path: ~/.asdf
-      key: asdf-${{ runner.os }}-${{ runner.arch }}-${{ inputs.version }}-${{ hashFiles('**/.tool-versions') }}
+      key: asdf-${{ runner.os }}-${{ runner.arch }}-${{ inputs.version }}-${{ hashFiles(format('{0}/.tool-versions', inputs.context)) }}
       restore-keys: |
         asdf-${{ runner.os }}-${{ runner.arch }}-${{ inputs.version }}-
         asdf-${{ runner.os }}-${{ runner.arch }}-
@@ -39,3 +43,4 @@ runs:
     env:
       ASDF_TOOLS_CONTEXT: ${{ inputs.context }}
       ASDF_EXTRA_PLUGINS: ${{ inputs.plugins }}
+      ASDF_UPDATE_PLUGINS: ${{ inputs.update-plugins }}

@@ -1,10 +1,19 @@
 #!/usr/bin/env bash
 
-set -e
+set -euo pipefail
+
+is_truthy() {
+  case "${1:-}" in
+    true|TRUE|True|1|yes|YES|on|ON)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
 
 asdf --version
-echo "$PATH"
-echo "$ASDF_TOOLS_CONTEXT"
 cd "$ASDF_TOOLS_CONTEXT"
 
 echo "✅ Adding additional plugins..."
@@ -24,12 +33,23 @@ while IFS= read -r plugin; do
 done <<< "$ASDF_EXTRA_PLUGINS"
 
 echo "✅ Adding main plugins..."
-cat .tool-versions | cut -f 1 -d ' ' | xargs -n 1 asdf plugin add || true
-asdf plugin update --all
+while IFS= read -r line; do
+  if [[ -z "$line" || "$line" =~ ^# ]]; then
+    continue
+  fi
+
+  tool="${line%% *}"
+  asdf plugin add "$tool" || true
+done < .tool-versions
+
+if is_truthy "${ASDF_UPDATE_PLUGINS:-false}"; then
+  asdf plugin update --all
+fi
+
 asdf plugin list --urls --refs
 
 echo "✅ Installing tools..."
-while read -r line; do
+while IFS= read -r line; do
   # Skip empty lines or lines starting with comments (#)
   if [[ -n "$line" && ! "$line" =~ ^# ]]; then
     tool=$(echo "$line" | awk '{print $1}')
