@@ -1,0 +1,72 @@
+name: Sync Docs to Confluence
+description: Publish a folder of markdown documentation to Confluence, mirroring the directory structure as a page hierarchy
+
+inputs:
+  folder:
+    description: Folder containing the documentation to publish
+    required: false
+    default: docs
+  username:
+    description: Confluence username or email
+    required: false
+    default: ${{ github.actor }}
+  api-token:
+    description: Confluence API token (NOT account password)
+    required: false
+    default: ''
+  password:
+    description: Alias for api-token. Prefer api-token.
+    required: false
+    default: ''
+  confluence-base-url:
+    description: Confluence URL with /wiki (e.g. https://mydomain.atlassian.net/wiki)
+    required: false
+    default: ''
+  space-key:
+    description: Confluence space key (resolved to a spaceId via the API)
+    required: false
+    default: ''
+  parent-page-id:
+    description: Numeric Confluence page id under which the documentation will be published
+    required: false
+    default: ''
+  version-message:
+    description: Version-message suffix appended to every page/attachment PUT
+    required: false
+    default: ''
+  skip-unchanged:
+    description: Skip pages whose body is unchanged (default true)
+    required: false
+    default: 'true'
+  dry-run:
+    description: Walk the doc tree and log the plan without making API calls
+    required: false
+    default: 'false'
+  cwd:
+    description: Working directory (default $GITHUB_WORKSPACE)
+    required: false
+    default: ${{ github.workspace }}
+  confluence-bin:
+    description: Path to the repo-toolkit-confluence binary. Leave empty to auto-resolve from node_modules/.bin or npx.
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+  - name: Sync Docs to Confluence
+    run: bash "${{ github.action_path }}/run.sh"
+    shell: bash
+    env:
+      CONFLUENCE_INPUT_FOLDER: ${{ inputs.folder }}
+      CONFLUENCE_INPUT_USERNAME: ${{ inputs.username }}
+      CONFLUENCE_INPUT_API_TOKEN: ${{ inputs.api-token }}
+      CONFLUENCE_INPUT_PASSWORD: ${{ inputs.password }}
+      CONFLUENCE_INPUT_BASE_URL: ${{ inputs.confluence-base-url }}
+      CONFLUENCE_INPUT_SPACE_KEY: ${{ inputs.space-key }}
+      CONFLUENCE_INPUT_PARENT_PAGE_ID: ${{ inputs.parent-page-id }}
+      CONFLUENCE_INPUT_VERSION_MESSAGE: ${{ inputs.version-message }}
+      CONFLUENCE_INPUT_SKIP_UNCHANGED: ${{ inputs.skip-unchanged }}
+      CONFLUENCE_INPUT_DRY_RUN: ${{ inputs.dry-run }}
+      CONFLUENCE_INPUT_CWD: ${{ inputs.cwd }}
+      CONFLUENCE_INPUT_BIN: ${{ inputs.confluence-bin }}

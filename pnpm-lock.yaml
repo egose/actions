@@ -23,6 +23,9 @@ importers:
       '@repo-toolkit/changelog':
         specifier: ^0.4.1
         version: 0.4.1(conventional-commits-filter@5.0.0)
+      '@repo-toolkit/confluence':
+        specifier: ^0.8.0
+        version: 0.8.0
       release-it:
         specifier: ^20.2.1
         version: 20.2.1(@types/node@25.6.0)
@@ -36,6 +39,14 @@ packages:
   '@babel/helper-validator-identifier@7.28.5':
     resolution: {integrity: sha512-qSs4ifwzKJSV39ucNjsvc6WVHs6b7S03sOh2OcHF9UHfVPqWWALUsNUVzhSBiItjRZoLHx7nIarVjqKVusUZ1Q==}
     engines: {node: '>=6.9.0'}
+
+  '@clack/core@1.4.3':
+    resolution: {integrity: sha512-/kr3UWNtdJfxZtPgDqUOmG2pvwlmcLGheex5yiZKdwbzZJxhV+HMNR9QNmyY5cGwTNV6LrR7Jtp+KjhUAP1qBQ==}
+    engines: {node: '>= 20.12.0'}
+
+  '@clack/prompts@1.7.0':
+    resolution: {integrity: sha512-y7/yvZ2TPAnR9+jnc00klvNNLkJiXFFrQA/hlLCcxA9a2A4zQIOimyFQ9XfwYKiGD1fb5GY8vbKIIgO8d5Tb2A==}
+    engines: {node: '>= 20.12.0'}
 
   '@commitlint/cli@20.5.3':
     resolution: {integrity: sha512-OJdL0EXWD5y9LPa0nr/geOwzaS8BsdaybKkcloB0JgsguGxNv2R+hC2FTPqrAcprg35zF33KOQerY0x8W1aesA==}
@@ -335,6 +346,16 @@ packages:
 
   '@repo-toolkit/changelog@0.4.1':
     resolution: {integrity: sha512-g/2vUPUhIwoiM69wrZJ430mH4Mn4NTkG75yqZeVnQx40lmlpQAqpaRJwK9oiiUPdQXHgCK02CCubWjBrrERHkA==}
+    engines: {node: '>=20'}
+    hasBin: true
+
+  '@repo-toolkit/confluence@0.8.0':
+    resolution: {integrity: sha512-Gwug/rrFWjan/dfXrMt+/8yQPQko8OSeTkrnOk3PCQlzsAUFsXnqvVc1dYaLdVWK8oLuMja+p0Yum0dSotpRVA==}
+    engines: {node: '>=20'}
+    hasBin: true
+
+  '@repo-toolkit/publish-package@0.8.0':
+    resolution: {integrity: sha512-vvAZx+zgh+YhTWvExSx5oAFzaTFc4SXKh3feW2j80UjKXNn+/XuXtuCyjwl71eFBoNJ1bSi+dLUTuTBSO72knQ==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -1117,6 +1138,9 @@ packages:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
 
+  sisteransi@1.0.5:
+    resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
+
   smart-buffer@4.2.0:
     resolution: {integrity: sha512-94hK0Hh8rPqQl2xXc3HsaBoOXKV20MToPkcXvwbISWLEs+64sBq5kFgn2kJDHb1Pry9yrP0dxrCI9RRci7RXKg==}
     engines: {node: '>= 6.0.0', npm: '>= 3.0.0'}
@@ -1275,6 +1299,18 @@ snapshots:
       picocolors: 1.1.1
 
   '@babel/helper-validator-identifier@7.28.5': {}
+
+  '@clack/core@1.4.3':
+    dependencies:
+      fast-wrap-ansi: 0.2.0
+      sisteransi: 1.0.5
+
+  '@clack/prompts@1.7.0':
+    dependencies:
+      '@clack/core': 1.4.3
+      fast-string-width: 3.0.2
+      fast-wrap-ansi: 0.2.0
+      sisteransi: 1.0.5
 
   '@commitlint/cli@20.5.3(@types/node@25.6.0)(conventional-commits-filter@5.0.0)(conventional-commits-parser@6.4.0)(typescript@6.0.3)':
     dependencies:
@@ -1614,6 +1650,14 @@ snapshots:
       conventional-changelog-conventionalcommits: 9.3.1
     transitivePeerDependencies:
       - conventional-commits-filter
+
+  '@repo-toolkit/confluence@0.8.0':
+    dependencies:
+      '@repo-toolkit/publish-package': 0.8.0
+
+  '@repo-toolkit/publish-package@0.8.0':
+    dependencies:
+      '@clack/prompts': 1.7.0
 
   '@simple-libs/child-process-utils@1.0.2':
     dependencies:
@@ -2383,6 +2427,8 @@ snapshots:
   semver@7.8.5: {}
 
   signal-exit@4.1.0: {}
+
+  sisteransi@1.0.5: {}
 
   smart-buffer@4.2.0: {}
 

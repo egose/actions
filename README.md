@@ -8,6 +8,7 @@ This repository contains several reusable composite GitHub Actions.
 | --- | --- |
 | [`asdf-install`](./asdf-install/README.md) | Installs the `asdf` CLI and adds it to `PATH`. |
 | [`asdf-tools`](./asdf-tools/README.md) | Installs `asdf` and tool versions from `.tool-versions`. |
+| [`confluence`](./confluence/README.md) | Syncs a folder of markdown docs to Confluence pages and attachments. |
 | [`docker-build-push`](./docker-build-push/README.md) | Builds and pushes a Docker image, with optional Trivy scanning. |
 | [`npm-packages`](./npm-packages/README.md) | Runs `npm install` across one or more package directories. |
 | [`oc-login`](./oc-login/README.md) | Ensures `oc` exists and logs into an OpenShift cluster. |
