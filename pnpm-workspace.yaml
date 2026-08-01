@@ -1,0 +1,7 @@
+# Auto-managed by pnpm's supply-chain minimumReleaseAge policy. Entries listed
+# here are exempted from the "newly published packages must age before install"
+# gate (e.g. freshly-released @repo-toolkit/* packages that the action needs
+# immediately). Re-run `pnpm install` to refresh; do not format/sort by hand.
+minimumReleaseAgeExclude:
+- '@repo-toolkit/confluence@0.8.0'
+- '@repo-toolkit/publish-package@0.8.0'
