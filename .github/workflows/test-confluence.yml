@@ -40,13 +40,17 @@ jobs:
 
     - name: Verify dry-run output mentions both pages
       shell: bash
+      working-directory: tests/fixtures/confluence
       run: |
         set -euo pipefail
         # Re-run the CLI directly to capture stdout (composite `uses:` steps don't
         # expose their stdout to later steps without an action output). The
         # previous step already validated the action's binary resolution; this
         # step simply greps the CLI's planning output for the expected pages.
-        output="$( ( cd tests/fixtures/confluence && ../../node_modules/.bin/repo-toolkit-confluence --folder docs --dry-run ) 2>&1 )"
+        # Resolve the bin from GITHUB_WORKSPACE so it doesn't depend on a
+        # fragile relative-depth calculation.
+        bin="${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}/node_modules/.bin/repo-toolkit-confluence"
+        output="$( "$bin" --folder docs --dry-run 2>&1 )"
         echo "$output"
         grep -q 'index.md' <<<"$output"
         grep -q 'guide/intro.md' <<<"$output"
