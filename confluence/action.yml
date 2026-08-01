@@ -50,6 +50,18 @@ inputs:
     description: Path to the repo-toolkit-confluence binary. Leave empty to auto-resolve from node_modules/.bin or npx.
     required: false
     default: ''
+  asdf-version:
+    description: asdf version to install when node is missing
+    required: false
+    default: v0.20.0
+  nodejs-version:
+    description: Node.js version to install with asdf when node is missing
+    required: false
+    default: 26.5.0
+  pnpm-version:
+    description: pnpm version to install with asdf when pnpm is missing
+    required: false
+    default: 11.15.0
 
 runs:
   using: composite
@@ -70,3 +82,7 @@ runs:
       CONFLUENCE_INPUT_DRY_RUN: ${{ inputs.dry-run }}
       CONFLUENCE_INPUT_CWD: ${{ inputs.cwd }}
       CONFLUENCE_INPUT_BIN: ${{ inputs.confluence-bin }}
+      CONFLUENCE_ACTION_PATH: ${{ github.action_path }}
+      CONFLUENCE_ASDF_VERSION: ${{ inputs.asdf-version }}
+      CONFLUENCE_NODEJS_VERSION: ${{ inputs.nodejs-version }}
+      CONFLUENCE_PNPM_VERSION: ${{ inputs.pnpm-version }}
