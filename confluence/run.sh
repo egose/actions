@@ -63,7 +63,7 @@ resolve_binary() {
   fi
 
   # 3. ACTION_PATH node_modules/.bin/repo-toolkit-confluence (fixture-driven tests)
-  local action_bin="${ACTION_PATH:-}/node_modules/.bin/repo-toolkit-confluence"
+  local action_bin="${CONFLUENCE_ACTION_PATH:-}/node_modules/.bin/repo-toolkit-confluence"
   if [[ -x "$action_bin" ]]; then
     echo "$action_bin"
     return 0
@@ -81,11 +81,65 @@ resolve_binary() {
   echo "npx -y @repo-toolkit/confluence"
 }
 
+# Bootstrap node + pnpm via asdf when either is missing on PATH. Mirrors the
+# pattern used by pre-commit/run.sh: reuse existing installations as-is, only
+# install when the command is unavailable. Adds the asdf shims to GITHUB_PATH
+# so subsequent workflow steps also see node/pnpm.
+ensure_runtimes() {
+  local node_ok=false pnpm_ok=false
+  command -v node  >/dev/null 2>&1 && node_ok=true
+  command -v pnpm  >/dev/null 2>&1 && pnpm_ok=true
+
+  if [[ "$node_ok" == "true" && "$pnpm_ok" == "true" ]]; then
+    echo "✅ node and pnpm already available"
+    return 0
+  fi
+
+  echo "➡️ Installing asdf ${CONFLUENCE_ASDF_VERSION:-v0.20.0}..."
+  ASDF_VERSION="${CONFLUENCE_ASDF_VERSION:-v0.20.0}" bash "${CONFLUENCE_ACTION_PATH:?}/../asdf-install/install.sh"
+  export PATH="${RUNNER_TEMP:-/tmp}/asdf-bin:${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
+
+  if ! command -v asdf >/dev/null 2>&1; then
+    echo >&2 "❌ asdf is unavailable after bootstrap"
+    exit 1
+  fi
+
+  if [[ "$node_ok" != "true" ]]; then
+    echo "➡️ Installing nodejs ${CONFLUENCE_NODEJS_VERSION:-26.5.0} via asdf..."
+    asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git || true
+    asdf install nodejs "${CONFLUENCE_NODEJS_VERSION:-26.5.0}"
+  fi
+
+  if [[ "$pnpm_ok" != "true" ]]; then
+    echo "➡️ Installing pnpm ${CONFLUENCE_PNPM_VERSION:-11.15.0} via asdf..."
+    asdf plugin add pnpm https://github.com/jonathanmorley/asdf-pnpm.git || true
+    asdf install pnpm "${CONFLUENCE_PNPM_VERSION:-11.15.0}"
+  fi
+
+  local shims_dir="${ASDF_DATA_DIR:-$HOME/.asdf}/shims"
+  echo "$shims_dir" >> "$GITHUB_PATH"
+  export PATH="$shims_dir:$PATH"
+
+  if ! command -v node >/dev/null 2>&1; then
+    echo >&2 "❌ node is unavailable after dependency bootstrap"
+    exit 1
+  fi
+  if ! command -v pnpm >/dev/null 2>&1; then
+    echo >&2 "❌ pnpm is unavailable after dependency bootstrap"
+    exit 1
+  fi
+}
+
 main() {
   if [[ -z "${CONFLUENCE_INPUT_FOLDER:-}" ]]; then
     echo >&2 "❌ 'folder' input is required"
     exit 1
   fi
+
+  # Make sure node + pnpm are available before resolving the CLI (every
+  # bin-resolution path ultimately execs node; the pnpm shim is also needed
+  # to install @repo-toolkit/confluence into the consuming repo).
+  ensure_runtimes
 
   # Resolve the binary BEFORE cd-ing to $cwd so that the workspace-level
   # node_modules/.bin lookup uses the runner workspace rather than the docs

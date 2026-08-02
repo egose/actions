@@ -19,6 +19,7 @@ in `node_modules/.bin`.
 - For each sub-folder path segment, finds or creates a parent page (cached per run by parent id + title).
 - For each Markdown file: converts the body to Confluence storage format, uploads local images as attachments and rewrites the corresponding placeholders, then PUTs the page with `version.number = current + 1` (optimistic concurrency — concurrent writes get HTTP 409).
 - Skips pages whose body is unchanged when `skip-unchanged` is `true` (default).
+- Reuses existing `node` and `pnpm`, or installs missing dependencies automatically via `asdf`.
 
 ## Usage
 
@@ -38,15 +39,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: pnpm
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -61,6 +53,8 @@ jobs:
           parent-page-id: '123456789'
 ```
 
+If `node`/`pnpm` are already on PATH (e.g. installed by `actions/setup-node`/`pnpm/action-setup` in a previous step, or from the runner image), the action reuses them. Otherwise it installs them via `asdf` automatically — no extra setup steps required.
+
 ### Dry-run Planning
 
 Useful to verify the directory walk picks up the expected pages without
@@ -71,6 +65,17 @@ touching Confluence:
   with:
     folder: docs
     dry-run: 'true'
+```
+
+### Pin Fallback Dependency Versions
+
+```yaml
+- name: Sync Docs to Confluence with pinned fallback tool versions
+  uses: egose/actions/confluence@main
+  with:
+    asdf-version: 'v0.20.0'
+    nodejs-version: '26.5.0'
+    pnpm-version: '11.15.0'
 ```
 
 ## Inputs
@@ -89,12 +94,22 @@ touching Confluence:
 | `dry-run` | No | `false` | Walk the doc tree and log the plan without making API calls. |
 | `cwd` | No | `${{ github.workspace }}` | Working directory the CLI resolves `folder` against. |
 | `confluence-bin` | No | `` | Path to the `repo-toolkit-confluence` binary. Auto-resolved from `node_modules/.bin` when empty. |
+| `asdf-version` | No | `v0.20.0` | `asdf` version to install when `node` is missing. |
+| `nodejs-version` | No | `26.5.0` | Node.js version to install with `asdf` when `node` is missing. |
+| `pnpm-version` | No | `11.15.0` | pnpm version to install with `asdf` when `pnpm` is missing. |
 
 ## Security Notes
 
 - Store the Confluence API token as a repository secret and reference it via `${{ secrets.* }}`.
 - Authentication uses HTTP Basic with `<username>:<apiToken>`; never send your account password.
 - The CLI escapes all HTML output and neutralises `]]>` inside code blocks; attachment filenames are path-separator-stripped before being emitted into `<ri:attachment ri:filename="…"/>`.
+
+## Notes
+
+- If `node` is missing, the action installs `asdf` first, then Node.js, automatically before resolving the CLI.
+- If `pnpm` is missing, it is installed via `asdf` as well so the consuming repo's `pnpm install` step can run.
+- Existing `node` and `pnpm` installations are reused as-is.
+- `asdf` install reuses the `asdf-install` action (`../asdf-install/install.sh`); the asdf shims directory is added to `GITHUB_PATH` so subsequent workflow steps also see the installed tools.
 
 ## Binary Resolution
 

@@ -80,4 +80,5 @@ jobs:
 - The cache key is based on `hashFiles('**/pnpm-lock.yaml')`, so any lockfile change refreshes the cache.
 - `frozen: 'true'` requires matching `pnpm-lock.yaml` files to already exist for each target directory.
 - `ignore-scripts: 'true'` applies to both normal installs and frozen installs.
+- Installs run with `--ignore-workspace`, so each target directory is installed against its own `package.json`/`pnpm-lock.yaml`. This prevents pnpm from walking up to a parent `pnpm-workspace.yaml` and writing the lockfile (or installing root dependencies) at that workspace root instead of the target directory.
 - This action has no outputs.
