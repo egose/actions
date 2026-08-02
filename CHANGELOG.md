@@ -1,3 +1,27 @@
+## [0.17.0](https://github.com/egose/actions/compare/v0.16.0...v0.17.0) (2026-08-02)
+
+### Features
+
+* add confluence sync action and test fixture ([987c905](https://github.com/egose/actions/commit/987c90550a4531a3a25fde0fa88d56914b3f54db))
+* add plugin refresh support and context-aware caching to asdf tools ([ee69384](https://github.com/egose/actions/commit/ee69384b9bd837fc40aefcde404b2bbf836a4e0b))
+* add shared package install helper and expand workflow coverage ([116b71e](https://github.com/egose/actions/commit/116b71e07a72775f9c84ad7810f1de0e6e0f0b49))
+* bootstrap node and pnpm with asdf when missing ([dec9dfb](https://github.com/egose/actions/commit/dec9dfb336bca7560d925d299bdd10e9ab307b97))
+* harden asdf installation with checksum verification ([0d25050](https://github.com/egose/actions/commit/0d25050e244488e3166d957aee5893fa4b6e145e))
+* refactor release-tag logic into tested shell helpers ([0074e2f](https://github.com/egose/actions/commit/0074e2f2e70ff2b1400c5e7e7ee45b7c2576782a))
+
+### Bug Fixes
+
+* allow pre-commit to read overridden event and ref inputs ([1956880](https://github.com/egose/actions/commit/1956880862d7220900145d7b874833e710240ae7))
+* allow pre-commit workflow to clone and init main correctly ([405fde7](https://github.com/egose/actions/commit/405fde76405f009531e93e9a6eec1a2daab160cc))
+* prevent pnpm installs from targeting workspace roots ([9ee2aa5](https://github.com/egose/actions/commit/9ee2aa5ebd7ddaa9a54960b5b925a55b3269266c))
+* resolve confluence CLI from workspace in workflow ([f32426a](https://github.com/egose/actions/commit/f32426a1a73438501cb39c93a28ed72a25ee28c7))
+* resolve pre-commit head ref selection for auto-commit ([6acadac](https://github.com/egose/actions/commit/6acadac3016794a3a4e997a9788026aab2f9a18e))
+
+### Documentation
+
+* add repository validation instructions and update package docs ([b6a3cd6](https://github.com/egose/actions/commit/b6a3cd65223305a18def15e8bc1ee2d794c2a2a8))
+* document runtime auto-install and fallback version inputs ([9d68523](https://github.com/egose/actions/commit/9d68523f5bd2a62978bde1d085ec1700f18822f0))
+
 ## [0.16.0](https://github.com/egose/actions/compare/v0.15.0...v0.16.0) (2026-07-19)
 
 ### Features
