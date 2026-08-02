@@ -16,14 +16,18 @@ install_target() {
       fi
       ;;
     pnpm)
+      # Always pass --ignore-workspace so installs run against the target
+      # directory's own package.json/lockfile, even when a parent directory
+      # contains a pnpm-workspace.yaml. Without this, pnpm walks up to the
+      # nearest workspace root and installs/writes the lockfile there.
       if [ "${PACKAGE_FROZEN}" = 'true' ] && [ "${PACKAGE_IGNORE_SCRIPTS}" = 'true' ]; then
-        pnpm install --frozen-lockfile --ignore-scripts
+        pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
       elif [ "${PACKAGE_FROZEN}" = 'true' ]; then
-        pnpm install --frozen-lockfile
+        pnpm install --ignore-workspace --frozen-lockfile
       elif [ "${PACKAGE_IGNORE_SCRIPTS}" = 'true' ]; then
-        pnpm install --ignore-scripts
+        pnpm install --ignore-workspace --ignore-scripts
       else
-        pnpm install
+        pnpm install --ignore-workspace
       fi
       ;;
     yarn)

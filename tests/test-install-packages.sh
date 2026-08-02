@@ -65,7 +65,10 @@ run_case() {
 cd "$workspace"
 
 run_case npm true true 'ci --ignore-scripts' 'ci --ignore-scripts'
-run_case pnpm true false 'install --frozen-lockfile' 'install --frozen-lockfile'
+run_case pnpm false false 'install --ignore-workspace' 'install --ignore-workspace'
+run_case pnpm true false 'install --ignore-workspace --frozen-lockfile' 'install --ignore-workspace --frozen-lockfile'
+run_case pnpm false true 'install --ignore-workspace --ignore-scripts' 'install --ignore-workspace --ignore-scripts'
+run_case pnpm true true 'install --ignore-workspace --frozen-lockfile --ignore-scripts' 'install --ignore-workspace --frozen-lockfile --ignore-scripts'
 run_case yarn false true 'install --ignore-scripts' 'install --ignore-scripts'
 
 printf 'install-packages helper tests passed\n'
