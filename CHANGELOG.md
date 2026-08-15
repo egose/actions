@@ -1,3 +1,9 @@
+## [0.18.0](https://github.com/egose/actions/compare/v0.17.0...v0.18.0) (2026-08-15)
+
+### Features
+
+* handle pnpm workspace roots correctly during installs ([72bbcad](https://github.com/egose/actions/commit/72bbcad214207d15e6fd08bac4318f320ffc8067))
+
 ## [0.17.0](https://github.com/egose/actions/compare/v0.16.0...v0.17.0) (2026-08-02)
 
 ### Features
