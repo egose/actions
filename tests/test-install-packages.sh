@@ -14,6 +14,9 @@ cleanup() {
 trap cleanup EXIT
 
 mkdir -p "$bin_dir" "${workspace}/apps/app one" "${workspace}/apps/app two"
+# A target that is itself a pnpm workspace root (has pnpm-workspace.yaml) must
+# NOT receive --ignore-workspace; this is the monorepo case.
+mkdir -p "${workspace}/mono"
 
 for manager in npm pnpm yarn; do
   cat > "${bin_dir}/${manager}" <<EOF
@@ -62,6 +65,36 @@ run_case() {
   fi
 }
 
+run_workspace_case() {
+  local manager="$1"
+  local frozen="$2"
+  local ignore_scripts="$3"
+  local expected="$4"
+
+  : > "$log_file"
+  touch "${workspace}/mono/pnpm-workspace.yaml"
+  PATH="${bin_dir}:$PATH" \
+  PACKAGE_MANAGER="$manager" \
+  PACKAGE_FROZEN="$frozen" \
+  PACKAGE_IGNORE_SCRIPTS="$ignore_scripts" \
+  PACKAGE_PATHS='mono' \
+  bash "${repo_root}/scripts/install-packages.sh"
+
+  mapfile -t lines < "$log_file"
+  if [ "${#lines[@]}" -ne 1 ]; then
+    echo "expected one install invocation for ${manager} workspace root, got ${#lines[@]}"
+    rm -f "${workspace}/mono/pnpm-workspace.yaml"
+    exit 1
+  fi
+  rm -f "${workspace}/mono/pnpm-workspace.yaml"
+
+  if [ "${lines[0]}" != "${manager}|${workspace}/mono::${expected}" ]; then
+    echo "unexpected invocation for ${manager} workspace root: ${lines[0]}"
+    echo "expected: ${manager}|${workspace}/mono::${expected}"
+    exit 1
+  fi
+}
+
 cd "$workspace"
 
 run_case npm true true 'ci --ignore-scripts' 'ci --ignore-scripts'
@@ -70,5 +103,10 @@ run_case pnpm true false 'install --ignore-workspace --frozen-lockfile' 'install
 run_case pnpm false true 'install --ignore-workspace --ignore-scripts' 'install --ignore-workspace --ignore-scripts'
 run_case pnpm true true 'install --ignore-workspace --frozen-lockfile --ignore-scripts' 'install --ignore-workspace --frozen-lockfile --ignore-scripts'
 run_case yarn false true 'install --ignore-scripts' 'install --ignore-scripts'
+
+run_workspace_case pnpm false false 'install'
+run_workspace_case pnpm true false 'install --frozen-lockfile'
+run_workspace_case pnpm false true 'install --ignore-scripts'
+run_workspace_case pnpm true true 'install --frozen-lockfile --ignore-scripts'
 
 printf 'install-packages helper tests passed\n'

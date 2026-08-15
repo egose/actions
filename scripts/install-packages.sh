@@ -16,18 +16,24 @@ install_target() {
       fi
       ;;
     pnpm)
-      # Always pass --ignore-workspace so installs run against the target
-      # directory's own package.json/lockfile, even when a parent directory
-      # contains a pnpm-workspace.yaml. Without this, pnpm walks up to the
-      # nearest workspace root and installs/writes the lockfile there.
+      # Pass --ignore-workspace only when the target directory is not itself a
+      # pnpm workspace root. This protects standalone projects nested under a
+      # parent pnpm-workspace.yaml (so pnpm doesn't walk up and mutate the
+      # parent's lockfile), while letting genuine workspace roots install their
+      # full package set normally.
+      workspace_flags=()
+      if [ ! -f 'pnpm-workspace.yaml' ]; then
+        workspace_flags+=(--ignore-workspace)
+      fi
+
       if [ "${PACKAGE_FROZEN}" = 'true' ] && [ "${PACKAGE_IGNORE_SCRIPTS}" = 'true' ]; then
-        pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
+        pnpm install "${workspace_flags[@]}" --frozen-lockfile --ignore-scripts
       elif [ "${PACKAGE_FROZEN}" = 'true' ]; then
-        pnpm install --ignore-workspace --frozen-lockfile
+        pnpm install "${workspace_flags[@]}" --frozen-lockfile
       elif [ "${PACKAGE_IGNORE_SCRIPTS}" = 'true' ]; then
-        pnpm install --ignore-workspace --ignore-scripts
+        pnpm install "${workspace_flags[@]}" --ignore-scripts
       else
-        pnpm install --ignore-workspace
+        pnpm install "${workspace_flags[@]}"
       fi
       ;;
     yarn)
