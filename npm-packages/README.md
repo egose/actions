@@ -77,6 +77,6 @@ jobs:
 - Missing directories are skipped.
 - The cache stores `~/.npm`, not `node_modules`, to avoid restoring incompatible installed artifacts across Node.js versions.
 - The cache key includes the active Node.js version and `hashFiles('**/package-lock.json')`, so lockfile or runtime changes refresh the cache.
-- `frozen: 'true'` requires matching `package-lock.json` files to already exist for each target directory.
+- `frozen: 'true'` uses `npm ci`, so each target directory must already have a `package-lock.json` that is in sync with its `package.json`.
 - `ignore-scripts: 'true'` applies to both normal installs and frozen installs.
 - This action has no outputs.
