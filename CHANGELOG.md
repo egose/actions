@@ -1,3 +1,17 @@
+## [0.19.0](https://github.com/egose/actions/compare/v0.18.0...v0.19.0) (2026-08-19)
+
+### Features
+
+* add Confluence docs deployment workflow ([5cb19a0](https://github.com/egose/actions/commit/5cb19a03582885ab5a1f66b84de14f8ed5199e90))
+
+### Bug Fixes
+
+* improve install failure guidance for frozen npm runs ([e07ce30](https://github.com/egose/actions/commit/e07ce3042b3af0828cfaacf4fc65ecc99a37de1d))
+
+### Documentation
+
+* clarify frozen npm lockfile requirements ([0cf99a3](https://github.com/egose/actions/commit/0cf99a3c1ade0e185c3f1469259a79ff7d1216fc))
+
 ## [0.18.0](https://github.com/egose/actions/compare/v0.17.0...v0.18.0) (2026-08-15)
 
 ### Features
