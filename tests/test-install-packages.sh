@@ -95,6 +95,38 @@ run_workspace_case() {
   fi
 }
 
+run_npm_frozen_failure_case() {
+  cat > "${bin_dir}/npm" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+
+printf '%s|%s\n' npm "\$PWD::\$*" >> "${log_file}"
+exit 1
+EOF
+  chmod 755 "${bin_dir}/npm"
+
+  : > "$log_file"
+  if PATH="${bin_dir}:$PATH" \
+    PACKAGE_MANAGER='npm' \
+    PACKAGE_FROZEN='true' \
+    PACKAGE_IGNORE_SCRIPTS='false' \
+    PACKAGE_PATHS='apps/app one' \
+    bash "${repo_root}/scripts/install-packages.sh" >"${workspace}/failure.out" 2>&1; then
+    echo 'expected frozen npm install to fail'
+    exit 1
+  fi
+
+  if ! grep -Fq "'frozen: true' uses 'npm ci'" "${workspace}/failure.out"; then
+    echo 'expected frozen npm failure guidance in output'
+    exit 1
+  fi
+
+  if ! grep -Fq "${workspace}/apps/app one" "${workspace}/failure.out"; then
+    echo 'expected failing target path in output'
+    exit 1
+  fi
+}
+
 cd "$workspace"
 
 run_case npm true true 'ci --ignore-scripts' 'ci --ignore-scripts'
@@ -108,5 +140,6 @@ run_workspace_case pnpm false false 'install'
 run_workspace_case pnpm true false 'install --frozen-lockfile'
 run_workspace_case pnpm false true 'install --ignore-scripts'
 run_workspace_case pnpm true true 'install --frozen-lockfile --ignore-scripts'
+run_npm_frozen_failure_case
 
 printf 'install-packages helper tests passed\n'

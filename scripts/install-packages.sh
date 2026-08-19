@@ -2,17 +2,32 @@
 
 set -euo pipefail
 
+run_install_command() {
+  if "$@"; then
+    return 0
+  fi
+
+  echo "❌ ${PACKAGE_MANAGER} install failed in $(pwd)" >&2
+
+  if [ "${PACKAGE_MANAGER}" = 'npm' ] && [ "${PACKAGE_FROZEN}" = 'true' ]; then
+    echo "   'frozen: true' uses 'npm ci', which requires package-lock.json to already be in sync with package.json." >&2
+    echo "   Run 'npm install' in this directory and commit the updated lockfile, or set 'frozen: false'." >&2
+  fi
+
+  exit 1
+}
+
 install_target() {
   case "${PACKAGE_MANAGER}" in
     npm)
       if [ "${PACKAGE_FROZEN}" = 'true' ] && [ "${PACKAGE_IGNORE_SCRIPTS}" = 'true' ]; then
-        npm ci --ignore-scripts
+        run_install_command npm ci --ignore-scripts
       elif [ "${PACKAGE_FROZEN}" = 'true' ]; then
-        npm ci
+        run_install_command npm ci
       elif [ "${PACKAGE_IGNORE_SCRIPTS}" = 'true' ]; then
-        npm install --ignore-scripts
+        run_install_command npm install --ignore-scripts
       else
-        npm install
+        run_install_command npm install
       fi
       ;;
     pnpm)
@@ -27,13 +42,13 @@ install_target() {
       fi
 
       if [ "${PACKAGE_FROZEN}" = 'true' ] && [ "${PACKAGE_IGNORE_SCRIPTS}" = 'true' ]; then
-        pnpm install "${workspace_flags[@]}" --frozen-lockfile --ignore-scripts
+        run_install_command pnpm install "${workspace_flags[@]}" --frozen-lockfile --ignore-scripts
       elif [ "${PACKAGE_FROZEN}" = 'true' ]; then
-        pnpm install "${workspace_flags[@]}" --frozen-lockfile
+        run_install_command pnpm install "${workspace_flags[@]}" --frozen-lockfile
       elif [ "${PACKAGE_IGNORE_SCRIPTS}" = 'true' ]; then
-        pnpm install "${workspace_flags[@]}" --ignore-scripts
+        run_install_command pnpm install "${workspace_flags[@]}" --ignore-scripts
       else
-        pnpm install "${workspace_flags[@]}"
+        run_install_command pnpm install "${workspace_flags[@]}"
       fi
       ;;
     yarn)
@@ -42,18 +57,18 @@ install_target() {
         yarn_major="${yarn_version%%.*}"
 
         if [ "${PACKAGE_FROZEN}" = 'true' ] && [ "${yarn_major}" -ge 2 ] 2>/dev/null; then
-          YARN_ENABLE_SCRIPTS=false yarn install --frozen-lockfile
+          run_install_command env YARN_ENABLE_SCRIPTS=false yarn install --frozen-lockfile
         elif [ "${PACKAGE_FROZEN}" = 'true' ]; then
-          yarn install --frozen-lockfile --ignore-scripts
+          run_install_command yarn install --frozen-lockfile --ignore-scripts
         elif [ "${yarn_major}" -ge 2 ] 2>/dev/null; then
-          YARN_ENABLE_SCRIPTS=false yarn install
+          run_install_command env YARN_ENABLE_SCRIPTS=false yarn install
         else
-          yarn install --ignore-scripts
+          run_install_command yarn install --ignore-scripts
         fi
       elif [ "${PACKAGE_FROZEN}" = 'true' ]; then
-        yarn install --frozen-lockfile
+        run_install_command yarn install --frozen-lockfile
       else
-        yarn install
+        run_install_command yarn install
       fi
       ;;
     *)
