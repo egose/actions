@@ -35,6 +35,21 @@ cleanup() {
 
 trap cleanup EXIT
 
+if [ -x "$install_dir/asdf" ]; then
+  current_version="$($install_dir/asdf --version 2>/dev/null || true)"
+
+  if [[ "$current_version" == *"${ASDF_VERSION}"* ]]; then
+    echo "$install_dir" >> "$GITHUB_PATH"
+    echo "$shims_dir" >> "$GITHUB_PATH"
+    export PATH="$install_dir:$shims_dir:$PATH"
+
+    echo "✅ asdf ${ASDF_VERSION} restored from cache"
+    exit 0
+  fi
+
+  echo "➡️ Cached asdf version mismatch (${current_version}), installing ${ASDF_VERSION}..."
+fi
+
 if command -v asdf >/dev/null 2>&1; then
   current_version="$(asdf --version 2>/dev/null || true)"
 
@@ -81,10 +96,20 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 1
 fi
 
-curl -fsSL -H "Accept: application/vnd.github+json" -o "$asdf_release_metadata_file" "$asdf_release_metadata_url" || {
-  echo "❌ Failed to download ASDF release metadata from $asdf_release_metadata_url"
-  exit 1
-}
+asdf_release_metadata_attempts=3
+for ((attempt = 1; attempt <= asdf_release_metadata_attempts; attempt++)); do
+  if curl -fsSL -H "Accept: application/vnd.github+json" -o "$asdf_release_metadata_file" "$asdf_release_metadata_url"; then
+    break
+  fi
+
+  if ((attempt == asdf_release_metadata_attempts)); then
+    echo "❌ Failed to download ASDF release metadata from $asdf_release_metadata_url"
+    exit 1
+  fi
+
+  echo "⚠️ Failed to download ASDF release metadata, retrying..."
+  sleep 2
+done
 
 expected_sha256="$(ASDF_ASSET="$asdf_asset" python3 - "$asdf_release_metadata_file" <<'PY'
 import json

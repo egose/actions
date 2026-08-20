@@ -10,6 +10,13 @@ inputs:
 runs:
   using: composite
   steps:
+  - name: Cache asdf binary
+    # See https://github.com/actions/cache/commits/main/
+    uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
+    with:
+      path: ${{ runner.temp }}/asdf-bin
+      key: asdf-bin-${{ runner.os }}-${{ runner.arch }}-${{ inputs.version }}
+
   - name: Install asdf
     run: bash "${{ github.action_path }}/install.sh"
     shell: bash
