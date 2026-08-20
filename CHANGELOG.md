@@ -1,3 +1,10 @@
+## [0.20.0](https://github.com/egose/actions/compare/v0.19.0...v0.20.0) (2026-08-20)
+
+### Features
+
+* cache installed asdf binaries and add metadata download retries ([126e9e7](https://github.com/egose/actions/commit/126e9e77b741330e85dbeb83fb33bc1e80a40520))
+* expose oc CLI path from the login action ([7f8dccc](https://github.com/egose/actions/commit/7f8dcccec3440593ae577efcb8ebafdefc6f2db5))
+
 ## [0.19.0](https://github.com/egose/actions/compare/v0.18.0...v0.19.0) (2026-08-19)
 
 ### Features
