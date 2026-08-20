@@ -1,6 +1,11 @@
 name: OpenShift oc login
 description: Ensure the oc CLI exists and log into an OpenShift cluster
 
+outputs:
+  oc-path:
+    description: Absolute path to the oc CLI used by the action
+    value: ${{ steps.resolve_oc.outputs.path }}
+
 inputs:
   openshift_server_url:
     description: URL of the OpenShift cluster API server
@@ -54,6 +59,14 @@ runs:
       OCLOGIN_ACTION_PATH: ${{ github.action_path }}
       OCLOGIN_ASDF_VERSION: ${{ inputs.asdf-version }}
       OCLOGIN_OC_VERSION: ${{ inputs.oc-version }}
+
+  - name: Resolve oc path
+    id: resolve_oc
+    shell: bash
+    run: |
+      oc_path="$(command -v oc)"
+      echo "path=${oc_path}" >> "$GITHUB_OUTPUT"
+      echo "$(dirname "$oc_path")" >> "$GITHUB_PATH"
 
   - name: Log in to OpenShift
     shell: bash
