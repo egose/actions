@@ -92,6 +92,8 @@ jobs:
       shell: bash
       env:
         OCLOGIN_OUTCOME: ${{ steps.oclogin.outcome }}
+        OC_PATH: ${{ steps.oclogin.outputs.oc-path }}
       run: |
         test "$OCLOGIN_OUTCOME" = "failure"
-        oc version --client || oc version
+        test -n "$OC_PATH"
+        "$OC_PATH" version --client || "$OC_PATH" version
