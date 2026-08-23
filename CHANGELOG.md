@@ -1,3 +1,10 @@
+## [0.20.1](https://github.com/egose/actions/compare/v0.20.0...v0.20.1) (2026-08-23)
+
+### Bug Fixes
+
+* unset cache env overrides in workflow ([e946388](https://github.com/egose/actions/commit/e9463882f0403263ccde94b176bde89ea512f5c3))
+* use action outputs for pnpm cache metadata ([a7368e6](https://github.com/egose/actions/commit/a7368e612bf29dd8092cb564ffd107621cca4aca))
+
 ## [0.20.0](https://github.com/egose/actions/compare/v0.19.0...v0.20.0) (2026-08-20)
 
 ### Features
