@@ -30,6 +30,9 @@ jobs:
 
     - name: Install package fixtures
       uses: ./pnpm-packages
+      env:
+        NODE_VERSION: ''
+        STORE_PATH: ''
       with:
         paths: |
           tests/fixtures/pnpm-packages/app-one
