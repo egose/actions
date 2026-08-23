@@ -19,20 +19,26 @@ runs:
   using: composite
   steps:
   - name: Get cache metadata
+    id: cache-metadata
     run: |
       node_version="$(node --version)"
-      echo "NODE_VERSION=${node_version#v}" >> "$GITHUB_ENV"
-      echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_ENV"
+      store_path="$(pnpm store path)"
+      if [[ -z "$store_path" ]]; then
+        echo "::error::pnpm store path returned an empty path"
+        exit 1
+      fi
+      echo "node-version=${node_version#v}" >> "$GITHUB_OUTPUT"
+      echo "store-path=$store_path" >> "$GITHUB_OUTPUT"
     shell: bash
 
   - name: Cache pnpm store
     # see https://github.com/actions/cache/commits/main/
     uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
     with:
-      path: ${{ env.STORE_PATH }}
-      key: pnpm-${{ runner.os }}-node-${{ env.NODE_VERSION }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+      path: ${{ steps.cache-metadata.outputs.store-path }}
+      key: pnpm-${{ runner.os }}-node-${{ steps.cache-metadata.outputs.node-version }}-${{ hashFiles('**/pnpm-lock.yaml') }}
       restore-keys: |
-        pnpm-${{ runner.os }}-node-${{ env.NODE_VERSION }}-
+        pnpm-${{ runner.os }}-node-${{ steps.cache-metadata.outputs.node-version }}-
         pnpm-${{ runner.os }}-
 
   - name: Install Packages
