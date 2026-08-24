@@ -77,6 +77,22 @@ inputs:
     description: Path for the generated SPDX JSON SBOM
     required: false
     default: image-sbom.spdx.json
+  attest-provenance:
+    description: Create a GitHub build provenance attestation for the verified image
+    required: false
+    default: 'false'
+  attest-sbom:
+    description: Create a GitHub SBOM attestation for the verified image
+    required: false
+    default: 'false'
+  attest-push-to-registry:
+    description: Push enabled attestations to the OCI registry
+    required: false
+    default: 'true'
+  attest-create-storage-record:
+    description: Create a GitHub artifact metadata storage record for enabled attestations
+    required: false
+    default: 'true'
 
 outputs:
   docker-version:
@@ -118,12 +134,40 @@ outputs:
   sbom-path:
     description: Path to the generated image SBOM when enabled
     value: ${{ steps.sbom-output.outputs.path }}
+  provenance-attestation-id:
+    description: GitHub ID of the generated provenance attestation
+    value: ${{ steps.attest-provenance.outputs.attestation-id }}
+  provenance-attestation-url:
+    description: GitHub URL of the generated provenance attestation
+    value: ${{ steps.attest-provenance.outputs.attestation-url }}
+  provenance-bundle-path:
+    description: Path to the generated provenance attestation bundle
+    value: ${{ steps.attest-provenance.outputs.bundle-path }}
+  provenance-storage-record-ids:
+    description: GitHub artifact metadata storage record IDs for the provenance attestation
+    value: ${{ steps.attest-provenance.outputs.storage-record-ids }}
+  sbom-attestation-id:
+    description: GitHub ID of the generated SBOM attestation
+    value: ${{ steps.attest-sbom.outputs.attestation-id }}
+  sbom-attestation-url:
+    description: GitHub URL of the generated SBOM attestation
+    value: ${{ steps.attest-sbom.outputs.attestation-url }}
+  sbom-bundle-path:
+    description: Path to the generated SBOM attestation bundle
+    value: ${{ steps.attest-sbom.outputs.bundle-path }}
+  sbom-storage-record-ids:
+    description: GitHub artifact metadata storage record IDs for the SBOM attestation
+    value: ${{ steps.attest-sbom.outputs.storage-record-ids }}
 
 runs:
   using: composite
   steps:
   - name: Validate inputs
     env:
+      ATTEST_CREATE_STORAGE_RECORD: ${{ inputs.attest-create-storage-record }}
+      ATTEST_PROVENANCE: ${{ inputs.attest-provenance }}
+      ATTEST_PUSH_TO_REGISTRY: ${{ inputs.attest-push-to-registry }}
+      ATTEST_SBOM: ${{ inputs.attest-sbom }}
       DOCKER_OUTPUTS: ${{ inputs.docker-outputs }}
       METADATA_ANNOTATIONS: ${{ inputs.metadata-annotations }}
       METADATA_LABELS_ANNOTATIONS: ${{ inputs.metadata-labels-annotations }}
@@ -132,6 +176,7 @@ runs:
       REGISTRY_PASSWORD: ${{ inputs.registry-password }}
       REGISTRY_URL: ${{ inputs.registry-url }}
       REGISTRY_USERNAME: ${{ inputs.registry-username }}
+      SBOM: ${{ inputs.sbom }}
     run: |
       set -euo pipefail
 
@@ -143,6 +188,12 @@ runs:
         true|false) ;;
         *) printf 'registry-login must be true or false, got %s\n' "$REGISTRY_LOGIN" >&2; exit 1 ;;
       esac
+      for value in "$ATTEST_PROVENANCE" "$ATTEST_SBOM" "$ATTEST_PUSH_TO_REGISTRY" "$ATTEST_CREATE_STORAGE_RECORD"; do
+        case "$value" in
+          true|false) ;;
+          *) printf 'attestation inputs must be true or false, got %s\n' "$value" >&2; exit 1 ;;
+        esac
+      done
       case "$REGISTRY_URL" in
         ''|*://*|*/) printf 'registry-url must be a registry host without a scheme or trailing slash, got %s\n' "$REGISTRY_URL" >&2; exit 1 ;;
       esac
@@ -156,6 +207,18 @@ runs:
       fi
       if [[ "$PUBLISH_MODE" == gated && ( -n "$METADATA_ANNOTATIONS" || -n "$METADATA_LABELS_ANNOTATIONS" ) ]]; then
         printf 'metadata annotations are not supported in gated mode because Docker image load does not preserve manifest annotations\n' >&2
+        exit 1
+      fi
+      if [[ "$PUBLISH_MODE" != gated && ( "$ATTEST_PROVENANCE" == true || "$ATTEST_SBOM" == true ) ]]; then
+        printf 'image attestations require publish-mode gated so they reference the verified manifest digest\n' >&2
+        exit 1
+      fi
+      if [[ "$ATTEST_SBOM" == true && "$SBOM" != true ]]; then
+        printf 'attest-sbom requires sbom to be true\n' >&2
+        exit 1
+      fi
+      if [[ ( "$ATTEST_PROVENANCE" == true || "$ATTEST_SBOM" == true ) && "$ATTEST_PUSH_TO_REGISTRY" != true && "$ATTEST_CREATE_STORAGE_RECORD" == true ]]; then
+        printf 'attest-create-storage-record requires attest-push-to-registry to be true\n' >&2
         exit 1
       fi
     shell: bash
@@ -186,6 +249,8 @@ runs:
   - name: Set up Docker Buildx
     # See https://github.com/docker/setup-buildx-action/commits/master/
     uses: docker/setup-buildx-action@21162887f0d6e25b4e8eafb0cf44cf9bf7f6acd3
+    with:
+      driver-opts: network=host
 
   - name: Set Environment variables
     run: |
@@ -377,6 +442,53 @@ runs:
       done <<< "$DOCKER_TAGS"
 
       printf 'manifest-digest=%s\n' "$manifest_digest" >> "$GITHUB_OUTPUT"
+    shell: bash
+
+  - id: attest-provenance
+    name: Attest image provenance
+    if: ${{ inputs.publish-mode == 'gated' && inputs.attest-provenance == 'true' }}
+    # See https://github.com/actions/attest/commits/main/
+    uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d
+    with:
+      subject-name: ${{ inputs.registry-url }}/${{ inputs.image-name }}
+      subject-digest: ${{ steps.publish.outputs.manifest-digest }}
+      subject-version: ${{ steps.meta.outputs.version }}
+      push-to-registry: ${{ inputs.attest-push-to-registry }}
+      create-storage-record: ${{ inputs.attest-create-storage-record }}
+
+  - name: Verify provenance storage record
+    if: ${{ inputs.attest-provenance == 'true' && inputs.attest-create-storage-record == 'true' }}
+    env:
+      STORAGE_RECORD_IDS: ${{ steps.attest-provenance.outputs.storage-record-ids }}
+    run: |
+      if [[ -z "$STORAGE_RECORD_IDS" ]]; then
+        printf 'GitHub did not create the requested provenance artifact storage record\n' >&2
+        exit 1
+      fi
+    shell: bash
+
+  - id: attest-sbom
+    name: Attest image SBOM
+    if: ${{ inputs.publish-mode == 'gated' && inputs.attest-sbom == 'true' }}
+    # See https://github.com/actions/attest/commits/main/
+    uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d
+    with:
+      subject-name: ${{ inputs.registry-url }}/${{ inputs.image-name }}
+      subject-digest: ${{ steps.publish.outputs.manifest-digest }}
+      subject-version: ${{ steps.meta.outputs.version }}
+      sbom-path: ${{ steps.sbom-output.outputs.path }}
+      push-to-registry: ${{ inputs.attest-push-to-registry }}
+      create-storage-record: ${{ inputs.attest-create-storage-record }}
+
+  - name: Verify SBOM storage record
+    if: ${{ inputs.attest-sbom == 'true' && inputs.attest-create-storage-record == 'true' }}
+    env:
+      STORAGE_RECORD_IDS: ${{ steps.attest-sbom.outputs.storage-record-ids }}
+    run: |
+      if [[ -z "$STORAGE_RECORD_IDS" ]]; then
+        printf 'GitHub did not create the requested SBOM artifact storage record\n' >&2
+        exit 1
+      fi
     shell: bash
 
   - name: Run Trivy vulnerability scanner

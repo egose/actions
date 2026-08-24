@@ -77,6 +77,22 @@ inputs:
     description: Path for the generated SPDX JSON SBOM
     required: false
     default: image-sbom.spdx.json
+  attest-provenance:
+    description: Create a GitHub build provenance attestation for the verified image
+    required: false
+    default: 'false'
+  attest-sbom:
+    description: Create a GitHub SBOM attestation for the verified image
+    required: false
+    default: 'false'
+  attest-push-to-registry:
+    description: Push enabled attestations to the OCI registry
+    required: false
+    default: 'true'
+  attest-create-storage-record:
+    description: Create a GitHub artifact metadata storage record for enabled attestations
+    required: false
+    default: 'true'
 
 outputs:
   docker-version:
@@ -118,6 +134,30 @@ outputs:
   sbom-path:
     description: Path to the generated image SBOM when enabled
     value: ${{ steps.delegate.outputs.sbom-path }}
+  provenance-attestation-id:
+    description: GitHub ID of the generated provenance attestation
+    value: ${{ steps.delegate.outputs.provenance-attestation-id }}
+  provenance-attestation-url:
+    description: GitHub URL of the generated provenance attestation
+    value: ${{ steps.delegate.outputs.provenance-attestation-url }}
+  provenance-bundle-path:
+    description: Path to the generated provenance attestation bundle
+    value: ${{ steps.delegate.outputs.provenance-bundle-path }}
+  provenance-storage-record-ids:
+    description: GitHub artifact metadata storage record IDs for the provenance attestation
+    value: ${{ steps.delegate.outputs.provenance-storage-record-ids }}
+  sbom-attestation-id:
+    description: GitHub ID of the generated SBOM attestation
+    value: ${{ steps.delegate.outputs.sbom-attestation-id }}
+  sbom-attestation-url:
+    description: GitHub URL of the generated SBOM attestation
+    value: ${{ steps.delegate.outputs.sbom-attestation-url }}
+  sbom-bundle-path:
+    description: Path to the generated SBOM attestation bundle
+    value: ${{ steps.delegate.outputs.sbom-bundle-path }}
+  sbom-storage-record-ids:
+    description: GitHub artifact metadata storage record IDs for the SBOM attestation
+    value: ${{ steps.delegate.outputs.sbom-storage-record-ids }}
 
 runs:
   using: composite
@@ -148,3 +188,7 @@ runs:
       upload-sarif: ${{ inputs.upload-sarif }}
       sbom: ${{ inputs.sbom }}
       sbom-file: ${{ inputs.sbom-file }}
+      attest-provenance: ${{ inputs.attest-provenance }}
+      attest-sbom: ${{ inputs.attest-sbom }}
+      attest-push-to-registry: ${{ inputs.attest-push-to-registry }}
+      attest-create-storage-record: ${{ inputs.attest-create-storage-record }}

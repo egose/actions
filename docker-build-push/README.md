@@ -11,6 +11,7 @@ Builds a Docker image, pushes it to any OCI-compatible registry, and exposes gen
 - Supports the backward-compatible `direct` build-and-push mode.
 - Supports a single-platform `gated` mode that builds locally, runs optional pre-push checks and Trivy, then pushes and verifies the exact local image config digest.
 - Optionally generates an SPDX JSON SBOM and uploads SARIF results to the GitHub Security tab.
+- Optionally creates GitHub provenance and SBOM attestations for the verified image.
 
 ## Usage
 
@@ -89,6 +90,8 @@ Use `gated` mode when registry tags must not change until checks pass:
     pre-push-command: docker run --rm "$IMAGE_REF" myapp --version
     trivy: 'true'
     sbom: 'true'
+    attest-provenance: 'true'
+    attest-sbom: 'true'
 
 - name: Use the verified publication outputs
   run: |
@@ -100,6 +103,15 @@ Use `gated` mode when registry tags must not change until checks pass:
 ```
 
 The registry host is not tied to GHCR. For an already-authenticated Docker client or an unauthenticated local registry, set `registry-login: 'false'` and omit credentials.
+
+GitHub attestations are optional. Callers enabling them must grant `id-token: write` and `attestations: write`. Callers creating artifact storage records must also grant `artifact-metadata: write`:
+
+```yaml
+permissions:
+  artifact-metadata: write
+  attestations: write
+  id-token: write
+```
 
 ### Share Metadata Between Labels And Annotations
 
@@ -146,6 +158,10 @@ The registry host is not tied to GHCR. For an already-authenticated Docker clien
 | `upload-sarif` | No | `"true"` | Upload Trivy SARIF to GitHub code scanning. |
 | `sbom` | No | `"false"` | Generate an SPDX JSON SBOM from the gated local image. |
 | `sbom-file` | No | `image-sbom.spdx.json` | Path for the generated image SBOM. |
+| `attest-provenance` | No | `"false"` | Create GitHub build provenance for the verified image. Requires gated mode. |
+| `attest-sbom` | No | `"false"` | Create a GitHub attestation from the generated SBOM. Requires `sbom: "true"` and gated mode. |
+| `attest-push-to-registry` | No | `"true"` | Attach enabled attestations to the OCI image in the registry. |
+| `attest-create-storage-record` | No | `"true"` | Create GitHub artifact metadata storage records. Requires registry attachment. |
 
 ## Outputs
 
@@ -164,6 +180,14 @@ The registry host is not tied to GHCR. For an already-authenticated Docker clien
 | `image-config-digest` | Config digest of the checked local image in gated mode. |
 | `manifest-digest` | Primary manifest digest reported after publication. |
 | `sbom-path` | Generated image SBOM path when enabled. |
+| `provenance-attestation-id` | GitHub ID of the provenance attestation. |
+| `provenance-attestation-url` | GitHub URL of the provenance attestation. |
+| `provenance-bundle-path` | Local path to the provenance attestation bundle. |
+| `provenance-storage-record-ids` | GitHub artifact metadata storage record IDs for the provenance attestation. |
+| `sbom-attestation-id` | GitHub ID of the SBOM attestation. |
+| `sbom-attestation-url` | GitHub URL of the SBOM attestation. |
+| `sbom-bundle-path` | Local path to the SBOM attestation bundle. |
+| `sbom-storage-record-ids` | GitHub artifact metadata storage record IDs for the SBOM attestation. |
 
 ## Notes
 
@@ -175,4 +199,6 @@ The registry host is not tied to GHCR. For an already-authenticated Docker clien
 - Gated mode authenticates only after the local checks and vulnerability gate pass, pushes each generated tag from the same local image, and verifies every remote manifest config digest against the local config digest.
 - `pre-push-command` is executable code and should only contain trusted workflow configuration. The command receives `IMAGE_REF` and `IMAGE_CONFIG_DIGEST`.
 - The Trivy upload requires `security-events: write`. Set `upload-sarif: 'false'` when that GitHub-specific integration is unavailable or unwanted.
-- Registry-specific signing and attestations remain caller responsibilities. The `manifest-digest` output can be passed to the registry's supported attestation tooling.
+- Attestations use GitHub Artifact Attestations and therefore require GitHub.com plus the documented job permissions. Private and internal repositories require GitHub Enterprise Cloud; GitHub Enterprise Server is not supported.
+- Registry attachment uses the existing Docker login and requires an OCI registry that supports attestation/referrer artifacts. Set `attest-push-to-registry: 'false'` and `attest-create-storage-record: 'false'` to keep attestations in GitHub only when the target registry does not support attachment.
+- Artifact metadata storage records are available only to organization-owned repositories. When requested, the action fails if GitHub does not return a storage record ID; disable `attest-create-storage-record` for user-owned repositories.
