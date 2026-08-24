@@ -47,7 +47,7 @@ inputs:
     required: false
     default: ${{ github.workspace }}
   confluence-bin:
-    description: Path to the repo-toolkit-confluence binary. Leave empty to auto-resolve from node_modules/.bin or npx.
+    description: Path to the repo-toolkit-confluence binary. Leave empty to auto-resolve from node_modules/.bin, asdf shims, or npx.
     required: false
     default: ''
   asdf-version:
@@ -62,6 +62,14 @@ inputs:
     description: pnpm version to install with asdf when pnpm is missing
     required: false
     default: 11.15.0
+  repo-toolkit-version:
+    description: repo-toolkit version to install via asdf when binary is not found. Use 'latest' for newest release.
+    required: false
+    default: latest
+  repo-toolkit-plugin-url:
+    description: Git URL for the repo-toolkit asdf plugin
+    required: false
+    default: https://github.com/egose/repo-toolkit.git
 
 runs:
   using: composite
@@ -86,3 +94,5 @@ runs:
       CONFLUENCE_ASDF_VERSION: ${{ inputs.asdf-version }}
       CONFLUENCE_NODEJS_VERSION: ${{ inputs.nodejs-version }}
       CONFLUENCE_PNPM_VERSION: ${{ inputs.pnpm-version }}
+      CONFLUENCE_REPO_TOOLKIT_VERSION: ${{ inputs.repo-toolkit-version }}
+      CONFLUENCE_REPO_TOOLKIT_PLUGIN_URL: ${{ inputs.repo-toolkit-plugin-url }}
