@@ -98,7 +98,7 @@ jobs:
     env:
       IMAGE_NAME: actions/docker-build-push-test
       IMAGE_TAG: test-${{ github.run_id }}
-      TEST_REGISTRY: localhost:5000
+      TEST_REGISTRY: 127.0.0.1:5000
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
