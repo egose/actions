@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
     - .github/workflows/test-docker-build-push.yml
+    - action.yml
     - docker-build-push/**
     - tests/fixtures/docker-build-push/**
   push:
@@ -11,6 +12,7 @@ on:
     - main
     paths:
     - .github/workflows/test-docker-build-push.yml
+    - action.yml
     - docker-build-push/**
     - tests/fixtures/docker-build-push/**
   workflow_dispatch:
@@ -68,3 +70,53 @@ jobs:
         IMAGE_TAG: ${{ env.IMAGE_TAG }}
       run: |
         docker pull "$FULL_IMAGE:$IMAGE_TAG"
+
+  gated-registry-test:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    services:
+      registry:
+        image: registry:2.8.3
+        ports:
+        - 5000:5000
+
+    env:
+      IMAGE_NAME: actions/docker-build-push-test
+      IMAGE_TAG: test-${{ github.run_id }}
+      TEST_REGISTRY: localhost:5000
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+    - name: Build, check, and push fixture image
+      id: build
+      uses: ./docker-build-push
+      with:
+        registry-url: ${{ env.TEST_REGISTRY }}
+        registry-login: 'false'
+        image-name: ${{ env.IMAGE_NAME }}
+        metadata-tags: |
+          type=raw,value=${{ env.IMAGE_TAG }}
+        metadata-labels: |
+          org.opencontainers.image.revision=${{ github.sha }}
+        docker-context: ./tests/fixtures/docker-build-push
+        docker-file: ./tests/fixtures/docker-build-push/Dockerfile
+        publish-mode: gated
+        pre-push-command: |
+          test "$(docker image inspect "$IMAGE_REF" --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}')" = "$GITHUB_SHA"
+
+    - name: Verify gated outputs and alternate registry publication
+      env:
+        EXPECTED_REF: ${{ env.TEST_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+        IMAGE_CONFIG_DIGEST: ${{ steps.build.outputs.image-config-digest }}
+        IMAGE_REF: ${{ steps.build.outputs.image-ref }}
+        MANIFEST_DIGEST: ${{ steps.build.outputs.manifest-digest }}
+      run: |
+        set -euo pipefail
+        test "$IMAGE_REF" = "$EXPECTED_REF"
+        [[ "$IMAGE_CONFIG_DIGEST" == sha256:* ]]
+        [[ "$MANIFEST_DIGEST" == sha256:* ]]
+        docker image rm "$EXPECTED_REF"
+        docker pull "$EXPECTED_REF"
+      shell: bash
