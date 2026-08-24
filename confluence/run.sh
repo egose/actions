@@ -44,6 +44,93 @@ join_args() {
   echo "$out"
 }
 
+ensure_asdf_available() {
+  if command -v asdf >/dev/null 2>&1; then
+    return 0
+  fi
+  echo "➡️ Installing asdf ${CONFLUENCE_ASDF_VERSION:-v0.20.0} for repo-toolkit..."
+  ASDF_VERSION="${CONFLUENCE_ASDF_VERSION:-v0.20.0}" bash "${CONFLUENCE_ACTION_PATH:?}/../asdf-install/install.sh"
+  export PATH="${RUNNER_TEMP:-/tmp}/asdf-bin:${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
+  if ! command -v asdf >/dev/null 2>&1; then
+    echo >&2 "❌ asdf is unavailable after bootstrap"
+    return 1
+  fi
+}
+
+install_repo_toolkit_via_asdf() {
+  # Already resolved via PATH - nothing to do
+  if command -v repo-toolkit-confluence >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if ! command -v jq >/dev/null 2>&1; then
+    echo >&2 "⚠️  jq not found; cannot install repo-toolkit via asdf (requires jq for GitHub release lookup)."
+    return 1
+  fi
+
+  if ! command -v node >/dev/null 2>&1; then
+    echo >&2 "⚠️  node not found; cannot install repo-toolkit via asdf."
+    return 1
+  fi
+
+  ensure_asdf_available || return 1
+
+  local toolkit_version="${CONFLUENCE_REPO_TOOLKIT_VERSION:-latest}"
+  local toolkit_plugin_url="${CONFLUENCE_REPO_TOOLKIT_PLUGIN_URL:-https://github.com/egose/repo-toolkit.git}"
+
+  echo >&2 "➡️  repo-toolkit-confluence not found; installing repo-toolkit ${toolkit_version} via asdf..."
+
+  # Add plugin if not already present
+  if ! asdf plugin list 2>/dev/null | grep -q "^repo-toolkit$"; then
+    asdf plugin add repo-toolkit "$toolkit_plugin_url" || true
+  fi
+
+  if ! asdf install repo-toolkit "$toolkit_version"; then
+    echo >&2 "⚠️  asdf repo-toolkit install failed for version ${toolkit_version}"
+    return 1
+  fi
+
+  # Resolve 'latest' to concrete version for shim compatibility
+  local actual_version="$toolkit_version"
+  if [[ "$actual_version" == "latest" ]]; then
+    actual_version=$(asdf latest repo-toolkit 2>/dev/null || asdf list repo-toolkit 2>/dev/null | tr -s ' ' '\n' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+' | tail -n1)
+    # fallback: list installs directory
+    if [[ -z "$actual_version" || "$actual_version" == "latest" ]]; then
+      actual_version=$(ls "${ASDF_DATA_DIR:-$HOME/.asdf}/installs/repo-toolkit" 2>/dev/null | sort -V | tail -n1)
+    fi
+  fi
+  if [[ -n "$actual_version" && "$actual_version" != "latest" ]]; then
+    # Ensure shim resolves without .tool-versions in consumer repo
+    asdf global repo-toolkit "$actual_version" 2>/dev/null || true
+  fi
+
+  local shims_dir="${ASDF_DATA_DIR:-$HOME/.asdf}/shims"
+  echo "$shims_dir" >> "$GITHUB_PATH" 2>/dev/null || true
+  export PATH="$shims_dir:$PATH"
+  asdf reshim repo-toolkit 2>/dev/null || asdf reshim 2>/dev/null || true
+
+  # Prefer shim, but also try direct install path (bypasses .tool-versions requirement)
+  if command -v repo-toolkit-confluence >/dev/null 2>&1; then
+    echo >&2 "✅ repo-toolkit ${actual_version:-$toolkit_version} installed via asdf"
+    return 0
+  fi
+  if [[ -n "$actual_version" ]]; then
+    local direct_bin="${ASDF_DATA_DIR:-$HOME/.asdf}/installs/repo-toolkit/${actual_version}/bin/repo-toolkit-confluence"
+    if [[ -x "$direct_bin" ]]; then
+      echo >&2 "✅ repo-toolkit ${actual_version} installed via asdf (direct bin)"
+      # symlink into shims dir for PATH lookup
+      ln -sf "$direct_bin" "$shims_dir/repo-toolkit-confluence" 2>/dev/null || true
+      export PATH="$shims_dir:$PATH"
+      if command -v repo-toolkit-confluence >/dev/null 2>&1; then
+        return 0
+      fi
+    fi
+  fi
+
+  echo >&2 "⚠️  repo-toolkit-confluence still not found after asdf install"
+  return 1
+}
+
 resolve_binary() {
   # 1. Explicit override
   if [[ -n "${CONFLUENCE_INPUT_BIN:-}" ]]; then
@@ -69,22 +156,32 @@ resolve_binary() {
     return 0
   fi
 
-  # 4. PATH lookup
+  # 4. PATH lookup (includes asdf shims)
   if command -v repo-toolkit-confluence >/dev/null 2>&1; then
     echo "repo-toolkit-confluence"
     return 0
   fi
 
-  # 5. npx fallback (downloads on demand; warn loudly)
+  # 5. asdf repo-toolkit fallback (persistent, preferred over npx)
+  if install_repo_toolkit_via_asdf; then
+    if command -v repo-toolkit-confluence >/dev/null 2>&1; then
+      echo "repo-toolkit-confluence"
+      return 0
+    fi
+  fi
+
+  # 6. npx fallback (downloads on demand; warn loudly)
   echo >&2 "‼️  repo-toolkit-confluence not found; falling back to npx (will download on every run)."
-  echo >&2 "   Install it in the consuming repo (pnpm add -D @repo-toolkit/confluence) for better performance."
+  echo >&2 "   Install it in the consuming repo (pnpm add -D @repo-toolkit/confluence) or pin repo-toolkit-version for better performance."
   echo "npx -y @repo-toolkit/confluence"
 }
 
 # Bootstrap node + pnpm via asdf when either is missing on PATH. Mirrors the
 # pattern used by pre-commit/run.sh: reuse existing installations as-is, only
 # install when the command is unavailable. Adds the asdf shims to GITHUB_PATH
-# so subsequent workflow steps also see node/pnpm.
+# so subsequent workflow steps also see node/pnpm. For the zero-setup path
+# (consumer with only actions/checkout), node is required but pnpm is
+# best-effort - repo-toolkit via asdf works without pnpm.
 ensure_runtimes() {
   local node_ok=false pnpm_ok=false
   command -v node  >/dev/null 2>&1 && node_ok=true
@@ -95,14 +192,7 @@ ensure_runtimes() {
     return 0
   fi
 
-  echo "➡️ Installing asdf ${CONFLUENCE_ASDF_VERSION:-v0.20.0}..."
-  ASDF_VERSION="${CONFLUENCE_ASDF_VERSION:-v0.20.0}" bash "${CONFLUENCE_ACTION_PATH:?}/../asdf-install/install.sh"
-  export PATH="${RUNNER_TEMP:-/tmp}/asdf-bin:${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
-
-  if ! command -v asdf >/dev/null 2>&1; then
-    echo >&2 "❌ asdf is unavailable after bootstrap"
-    exit 1
-  fi
+  ensure_asdf_available || exit 1
 
   if [[ "$node_ok" != "true" ]]; then
     echo "➡️ Installing nodejs ${CONFLUENCE_NODEJS_VERSION:-26.5.0} via asdf..."
@@ -117,7 +207,7 @@ ensure_runtimes() {
   fi
 
   local shims_dir="${ASDF_DATA_DIR:-$HOME/.asdf}/shims"
-  echo "$shims_dir" >> "$GITHUB_PATH"
+  echo "$shims_dir" >> "$GITHUB_PATH" 2>/dev/null || true
   export PATH="$shims_dir:$PATH"
 
   if ! command -v node >/dev/null 2>&1; then
@@ -125,8 +215,7 @@ ensure_runtimes() {
     exit 1
   fi
   if ! command -v pnpm >/dev/null 2>&1; then
-    echo >&2 "❌ pnpm is unavailable after dependency bootstrap"
-    exit 1
+    echo >&2 "⚠️  pnpm is unavailable after dependency bootstrap (continuing; repo-toolkit via asdf does not require pnpm)"
   fi
 }
 
@@ -136,9 +225,9 @@ main() {
     exit 1
   fi
 
-  # Make sure node + pnpm are available before resolving the CLI (every
-  # bin-resolution path ultimately execs node; the pnpm shim is also needed
-  # to install @repo-toolkit/confluence into the consuming repo).
+  # Make sure node (and optionally pnpm) are available before resolving the CLI.
+  # For zero-setup consumers, repo-toolkit is auto-installed via asdf when
+  # node_modules/.bin is missing.
   ensure_runtimes
 
   # Resolve the binary BEFORE cd-ing to $cwd so that the workspace-level
