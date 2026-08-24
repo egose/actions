@@ -22,7 +22,10 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
     permissions:
+      artifact-metadata: write
+      attestations: write
       contents: read
+      id-token: write
       packages: write
 
     env:
@@ -50,7 +53,10 @@ jobs:
           type=raw,value=${{ env.IMAGE_TAG }}
         docker-context: ./tests/fixtures/docker-build-push
         docker-file: ./tests/fixtures/docker-build-push/Dockerfile
-        docker-outputs: type=image,push=true,compression=gzip,force-compression=true
+        publish-mode: gated
+        sbom: 'true'
+        attest-provenance: 'true'
+        attest-sbom: 'true'
 
     - name: Verify action outputs
       shell: bash
@@ -59,9 +65,17 @@ jobs:
         IMAGE_TAG: ${{ env.IMAGE_TAG }}
         DOCKER_TAGS: ${{ steps.build.outputs.docker-tags }}
         METADATA_JSON: ${{ steps.build.outputs.metadata-json }}
+        PROVENANCE_ATTESTATION_ID: ${{ steps.build.outputs.provenance-attestation-id }}
+        PROVENANCE_STORAGE_RECORD_IDS: ${{ steps.build.outputs.provenance-storage-record-ids }}
+        SBOM_ATTESTATION_ID: ${{ steps.build.outputs.sbom-attestation-id }}
+        SBOM_STORAGE_RECORD_IDS: ${{ steps.build.outputs.sbom-storage-record-ids }}
       run: |
         [[ "$DOCKER_TAGS" == *"$FULL_IMAGE:$IMAGE_TAG"* ]]
         [[ -n "$METADATA_JSON" ]]
+        [[ -n "$PROVENANCE_ATTESTATION_ID" ]]
+        [[ -n "$PROVENANCE_STORAGE_RECORD_IDS" ]]
+        [[ -n "$SBOM_ATTESTATION_ID" ]]
+        [[ -n "$SBOM_STORAGE_RECORD_IDS" ]]
 
     - name: Verify image can be pulled from GHCR
       shell: bash
@@ -88,6 +102,29 @@ jobs:
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+    - name: Build and push fixture image in direct mode
+      id: direct
+      uses: ./
+      with:
+        registry-url: ${{ env.TEST_REGISTRY }}
+        registry-login: 'false'
+        image-name: ${{ env.IMAGE_NAME }}
+        metadata-tags: |
+          type=raw,value=direct-${{ env.IMAGE_TAG }}
+        docker-context: ./tests/fixtures/docker-build-push
+        docker-file: ./tests/fixtures/docker-build-push/Dockerfile
+        docker-outputs: type=image,push=true,compression=gzip,force-compression=true
+
+    - name: Verify direct mode through compatibility wrapper
+      env:
+        DIRECT_REF: ${{ env.TEST_REGISTRY }}/${{ env.IMAGE_NAME }}:direct-${{ env.IMAGE_TAG }}
+        MANIFEST_DIGEST: ${{ steps.direct.outputs.manifest-digest }}
+      run: |
+        set -euo pipefail
+        [[ "$MANIFEST_DIGEST" == sha256:* ]]
+        docker pull "$DIRECT_REF"
+      shell: bash
 
     - name: Build, check, and push fixture image
       id: build
