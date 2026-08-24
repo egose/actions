@@ -7,10 +7,14 @@ inputs:
     required: true
   registry-username:
     description: Docker container registry username
-    required: true
+    required: false
   registry-password:
     description: Docker container registry password
-    required: true
+    required: false
+  registry-login:
+    description: Log in to the container registry before publishing
+    required: false
+    default: 'true'
   image-name:
     description: Docker image name
     required: true
@@ -38,10 +42,41 @@ inputs:
   docker-outputs:
     description: List of output destinations
     required: false
+  publish-mode:
+    description: Publication mode; direct preserves the original build-and-push behavior, gated scans a local single-platform image before pushing it
+    required: false
+    default: direct
+  pre-push-command:
+    description: Trusted shell command run against IMAGE_REF and IMAGE_CONFIG_DIGEST after the gated local build and before scanning or publishing
+    required: false
   trivy:
     description: Run Trivy vulnerability scanner
     required: false
     default: 'false'
+  trivy-severity:
+    description: Comma-separated severities that fail a gated Trivy scan
+    required: false
+    default: HIGH,CRITICAL
+  trivy-ignore-unfixed:
+    description: Ignore vulnerabilities without fixes during a gated Trivy scan
+    required: false
+    default: 'true'
+  trivy-sarif-file:
+    description: Path for the Trivy SARIF report
+    required: false
+    default: trivy-results.sarif
+  upload-sarif:
+    description: Upload the Trivy SARIF report to GitHub code scanning
+    required: false
+    default: 'true'
+  sbom:
+    description: Generate an SPDX JSON SBOM from the gated local image
+    required: false
+    default: 'false'
+  sbom-file:
+    description: Path for the generated SPDX JSON SBOM
+    required: false
+    default: image-sbom.spdx.json
 
 outputs:
   docker-version:
@@ -71,11 +106,62 @@ outputs:
   bake-file:
     description: Bake definition file with tags and labels
     value: ${{ steps.meta.outputs.bake-file }}
+  image-ref:
+    description: Primary local image reference used by gated publication
+    value: ${{ steps.local-image.outputs.image-ref }}
+  image-config-digest:
+    description: Config digest of the local image used by gated publication
+    value: ${{ steps.local-image.outputs.config-digest }}
+  manifest-digest:
+    description: Published primary manifest digest
+    value: ${{ steps.publish.outputs.manifest-digest || steps.build-direct.outputs.digest }}
+  sbom-path:
+    description: Path to the generated image SBOM when enabled
+    value: ${{ steps.sbom-output.outputs.path }}
 
 runs:
   using: composite
   steps:
+  - name: Validate inputs
+    env:
+      DOCKER_OUTPUTS: ${{ inputs.docker-outputs }}
+      METADATA_ANNOTATIONS: ${{ inputs.metadata-annotations }}
+      METADATA_LABELS_ANNOTATIONS: ${{ inputs.metadata-labels-annotations }}
+      PUBLISH_MODE: ${{ inputs.publish-mode }}
+      REGISTRY_LOGIN: ${{ inputs.registry-login }}
+      REGISTRY_PASSWORD: ${{ inputs.registry-password }}
+      REGISTRY_URL: ${{ inputs.registry-url }}
+      REGISTRY_USERNAME: ${{ inputs.registry-username }}
+    run: |
+      set -euo pipefail
+
+      case "$PUBLISH_MODE" in
+        direct|gated) ;;
+        *) printf 'publish-mode must be direct or gated, got %s\n' "$PUBLISH_MODE" >&2; exit 1 ;;
+      esac
+      case "$REGISTRY_LOGIN" in
+        true|false) ;;
+        *) printf 'registry-login must be true or false, got %s\n' "$REGISTRY_LOGIN" >&2; exit 1 ;;
+      esac
+      case "$REGISTRY_URL" in
+        ''|*://*|*/) printf 'registry-url must be a registry host without a scheme or trailing slash, got %s\n' "$REGISTRY_URL" >&2; exit 1 ;;
+      esac
+      if [[ "$REGISTRY_LOGIN" == true && ( -z "$REGISTRY_USERNAME" || -z "$REGISTRY_PASSWORD" ) ]]; then
+        printf 'registry-username and registry-password are required when registry-login is true\n' >&2
+        exit 1
+      fi
+      if [[ "$PUBLISH_MODE" == gated && -n "$DOCKER_OUTPUTS" ]]; then
+        printf 'docker-outputs is not supported in gated mode because the scanned local image must be pushed unchanged\n' >&2
+        exit 1
+      fi
+      if [[ "$PUBLISH_MODE" == gated && ( -n "$METADATA_ANNOTATIONS" || -n "$METADATA_LABELS_ANNOTATIONS" ) ]]; then
+        printf 'metadata annotations are not supported in gated mode because Docker image load does not preserve manifest annotations\n' >&2
+        exit 1
+      fi
+    shell: bash
+
   - name: Log in to Docker Container Registry
+    if: ${{ inputs.publish-mode == 'direct' && inputs.registry-login == 'true' }}
     # See https://github.com/docker/login-action/commits/master/
     uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121
     with:
@@ -117,7 +203,9 @@ runs:
       key: ${{ runner.os }}-buildx-${{ inputs.image-name }}-${{ github.sha }}
       restore-keys: ${{ runner.os }}-buildx-${{ inputs.image-name }}
 
-  - name: Build and push Docker image
+  - id: build-direct
+    name: Build and push Docker image
+    if: ${{ inputs.publish-mode == 'direct' }}
     # See https://github.com/docker/build-push-action/commits/master/
     uses: docker/build-push-action@83bfd93ab480705a7b99a2ed02765137f5ab55ba
     with:
@@ -135,14 +223,154 @@ runs:
       cache-from: type=local,src=${{ env.DOCKER_LAYERS_PATH }}
       cache-to: type=local,dest=${{ env.DOCKER_LAYERS_PATH }}-new
 
+  - name: Build local image for gated publication
+    if: ${{ inputs.publish-mode == 'gated' }}
+    # See https://github.com/docker/build-push-action/commits/master/
+    uses: docker/build-push-action@83bfd93ab480705a7b99a2ed02765137f5ab55ba
+    with:
+      context: ${{ inputs.docker-context }}
+      file: ${{ inputs.docker-file }}
+      load: true
+      push: false
+      provenance: false
+      tags: ${{ steps.meta.outputs.tags }}
+      build-args: |
+        BUILD_TIMESTAMP=${{ env.BUILD_TIMESTAMP }}
+        ${{ inputs.docker-args }}
+      labels: ${{ steps.meta.outputs.labels }}
+      cache-from: type=local,src=${{ env.DOCKER_LAYERS_PATH }}
+      cache-to: type=local,dest=${{ env.DOCKER_LAYERS_PATH }}-new
+
   - name: Move Docker layers cache
     run: |
       rm -rf ${{ env.DOCKER_LAYERS_PATH }}
       mv ${{ env.DOCKER_LAYERS_PATH }}-new ${{ env.DOCKER_LAYERS_PATH }}
     shell: bash
 
+  - id: local-image
+    name: Record local image identity
+    if: ${{ inputs.publish-mode == 'gated' }}
+    env:
+      DOCKER_TAGS: ${{ steps.meta.outputs.tags }}
+    run: |
+      set -euo pipefail
+
+      image_ref="$(printf '%s\n' "$DOCKER_TAGS" | while IFS= read -r tag; do if [[ -n "$tag" ]]; then printf '%s\n' "$tag"; break; fi; done)"
+      if [[ -z "$image_ref" ]]; then
+        printf 'docker/metadata-action generated no image tags\n' >&2
+        exit 1
+      fi
+      config_digest="$(docker image inspect "$image_ref" --format '{{.Id}}')"
+      printf 'image-ref=%s\n' "$image_ref" >> "$GITHUB_OUTPUT"
+      printf 'config-digest=%s\n' "$config_digest" >> "$GITHUB_OUTPUT"
+      {
+        printf '### Container pre-publish evidence\n'
+        printf -- '- Local image: `%s`\n' "$image_ref"
+        printf -- '- Local image config digest: `%s`\n' "$config_digest"
+      } >> "$GITHUB_STEP_SUMMARY"
+    shell: bash
+
+  - name: Run pre-push checks
+    if: ${{ inputs.publish-mode == 'gated' && inputs.pre-push-command != '' }}
+    env:
+      IMAGE_CONFIG_DIGEST: ${{ steps.local-image.outputs.config-digest }}
+      IMAGE_REF: ${{ steps.local-image.outputs.image-ref }}
+      PRE_PUSH_COMMAND: ${{ inputs.pre-push-command }}
+    run: bash -euo pipefail -c "$PRE_PUSH_COMMAND"
+    shell: bash
+
+  - id: gated-scan
+    name: Scan local image before publishing
+    if: ${{ inputs.publish-mode == 'gated' && inputs.trivy == 'true' }}
+    continue-on-error: true
+    # See https://github.com/aquasecurity/trivy-action/commits/master/
+    uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+    with:
+      image-ref: ${{ steps.local-image.outputs.image-ref }}
+      format: sarif
+      output: ${{ inputs.trivy-sarif-file }}
+      exit-code: 1
+      ignore-unfixed: ${{ inputs.trivy-ignore-unfixed }}
+      severity: ${{ inputs.trivy-severity }}
+
+  - name: Upload gated Trivy scan results
+    if: ${{ always() && inputs.publish-mode == 'gated' && inputs.trivy == 'true' && inputs.upload-sarif == 'true' }}
+    # See https://github.com/github/codeql-action/commits/main/
+    uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd
+    with:
+      sarif_file: ${{ inputs.trivy-sarif-file }}
+
+  - name: Enforce gated Trivy result
+    if: ${{ inputs.publish-mode == 'gated' && inputs.trivy == 'true' && steps.gated-scan.outcome != 'success' }}
+    run: |
+      printf 'The pre-publish Trivy scan failed; no registry tags were changed.\n' >&2
+      exit 1
+    shell: bash
+
+  - name: Generate image SBOM
+    if: ${{ inputs.publish-mode == 'gated' && inputs.sbom == 'true' }}
+    # See https://github.com/aquasecurity/trivy-action/commits/master/
+    uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+    with:
+      image-ref: ${{ steps.local-image.outputs.image-ref }}
+      format: spdx-json
+      output: ${{ inputs.sbom-file }}
+      exit-code: 0
+
+  - id: sbom-output
+    name: Record image SBOM path
+    if: ${{ inputs.publish-mode == 'gated' && inputs.sbom == 'true' }}
+    env:
+      SBOM_FILE: ${{ inputs.sbom-file }}
+    run: printf 'path=%s\n' "$SBOM_FILE" >> "$GITHUB_OUTPUT"
+    shell: bash
+
+  - name: Log in for gated publication
+    if: ${{ inputs.publish-mode == 'gated' && inputs.registry-login == 'true' }}
+    # See https://github.com/docker/login-action/commits/master/
+    uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121
+    with:
+      registry: ${{ inputs.registry-url }}
+      username: ${{ inputs.registry-username }}
+      password: ${{ inputs.registry-password }}
+
+  - id: publish
+    name: Push and verify gated image
+    if: ${{ inputs.publish-mode == 'gated' }}
+    env:
+      DOCKER_TAGS: ${{ steps.meta.outputs.tags }}
+      IMAGE_CONFIG_DIGEST: ${{ steps.local-image.outputs.config-digest }}
+      IMAGE_REF: ${{ steps.local-image.outputs.image-ref }}
+    run: |
+      set -euo pipefail
+
+      while IFS= read -r tag; do
+        [[ -n "$tag" ]] || continue
+        docker image push "$tag"
+      done <<< "$DOCKER_TAGS"
+
+      manifest_digest="$(docker buildx imagetools inspect "$IMAGE_REF" --format '{{.Manifest.Digest}}')"
+      {
+        printf '### Container publish evidence\n'
+        printf -- '- Published primary image: `%s@%s`\n' "${IMAGE_REF%:*}" "$manifest_digest"
+      } >> "$GITHUB_STEP_SUMMARY"
+
+      while IFS= read -r tag; do
+        [[ -n "$tag" ]] || continue
+        published_config_digest="$(docker buildx imagetools inspect "$tag" --format '{{.Manifest.Config.Digest}}')"
+        published_manifest_digest="$(docker buildx imagetools inspect "$tag" --format '{{.Manifest.Digest}}')"
+        if [[ "$published_config_digest" != "$IMAGE_CONFIG_DIGEST" ]]; then
+          printf 'Published digest mismatch for %s: local %s, published %s\n' "$tag" "$IMAGE_CONFIG_DIGEST" "$published_config_digest" >&2
+          exit 1
+        fi
+        printf -- '- `%s`: manifest `%s`, config digest matches local `%s`\n' "$tag" "$published_manifest_digest" "$published_config_digest" >> "$GITHUB_STEP_SUMMARY"
+      done <<< "$DOCKER_TAGS"
+
+      printf 'manifest-digest=%s\n' "$manifest_digest" >> "$GITHUB_OUTPUT"
+    shell: bash
+
   - name: Run Trivy vulnerability scanner
-    if: ${{ inputs.trivy == 'true' }}
+    if: ${{ inputs.publish-mode == 'direct' && inputs.trivy == 'true' }}
     # See https://github.com/aquasecurity/trivy-action/commits/master/
     uses: aquasecurity/trivy-action@1bd062560b422f5944df1de50abd05162bea079e
     with:
@@ -151,7 +379,7 @@ runs:
       output: trivy-results.json
 
   - name: Convert Trivy JSON report into sarif
-    if: ${{ inputs.trivy == 'true' }}
+    if: ${{ inputs.publish-mode == 'direct' && inputs.trivy == 'true' }}
     run: |
       trivy convert --format sarif --output trivy-results.sarif trivy-results.json
       trivy convert --format table --output trivy-results.table trivy-results.json
@@ -170,7 +398,7 @@ runs:
     shell: bash
 
   - name: Upload Trivy scan results to GitHub Security tab
-    if: ${{ inputs.trivy == 'true' }}
+    if: ${{ inputs.publish-mode == 'direct' && inputs.trivy == 'true' && inputs.upload-sarif == 'true' }}
     # See https://github.com/github/codeql-action/commits/main/
     uses: github/codeql-action/upload-sarif@34950e1b113b30df4edee1a6d3a605242df0c40b
     with:
