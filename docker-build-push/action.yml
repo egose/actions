@@ -357,7 +357,7 @@ runs:
 
       while IFS= read -r tag; do
         [[ -n "$tag" ]] || continue
-        published_config_digest="$(docker buildx imagetools inspect "$tag" --format '{{.Manifest.Config.Digest}}')"
+        published_config_digest="$(docker buildx imagetools inspect "$tag" --raw | jq -er '.config.digest')"
         published_manifest_digest="$(docker buildx imagetools inspect "$tag" --format '{{.Manifest.Digest}}')"
         if [[ "$published_config_digest" != "$IMAGE_CONFIG_DIGEST" ]]; then
           printf 'Published digest mismatch for %s: local %s, published %s\n' "$tag" "$IMAGE_CONFIG_DIGEST" "$published_config_digest" >&2
