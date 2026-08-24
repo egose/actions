@@ -9,8 +9,8 @@ macros; remote images stay as `<ac:image><ri:url />`.
 
 The action is a thin composite wrapper around the
 [`@repo-toolkit/confluence`](https://github.com/egose/repo-toolkit/tree/main/packages/confluence)
-CLI; install the package in the consuming repository so the action can find it
-in `node_modules/.bin`.
+CLI (`repo-toolkit-confluence` from the [`repo-toolkit`](https://github.com/egose/repo-toolkit) asdf plugin).
+No setup steps are required in the consuming repository — `node` and `repo-toolkit` are auto-installed via `asdf` when missing.
 
 ## What It Does
 
@@ -19,7 +19,7 @@ in `node_modules/.bin`.
 - For each sub-folder path segment, finds or creates a parent page (cached per run by parent id + title).
 - For each Markdown file: converts the body to Confluence storage format, uploads local images as attachments and rewrites the corresponding placeholders, then PUTs the page with `version.number = current + 1` (optimistic concurrency — concurrent writes get HTTP 409).
 - Skips pages whose body is unchanged when `skip-unchanged` is `true` (default).
-- Reuses existing `node` and `pnpm`, or installs missing dependencies automatically via `asdf`.
+- Reuses existing `node`/`pnpm`/`repo-toolkit`, or installs missing runtimes automatically via `asdf`.
 
 ## Usage
 
@@ -39,9 +39,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
       - name: Sync Docs to Confluence
         uses: egose/actions/confluence@main
         with:
@@ -53,7 +50,7 @@ jobs:
           parent-page-id: '123456789'
 ```
 
-If `node`/`pnpm` are already on PATH (e.g. installed by `actions/setup-node`/`pnpm/action-setup` in a previous step, or from the runner image), the action reuses them. Otherwise it installs them via `asdf` automatically — no extra setup steps required.
+Zero setup required — just `actions/checkout` + `uses: egose/actions/confluence@main`. If `node`/`pnpm`/`repo-toolkit` are already on `PATH` (e.g. installed by `actions/setup-node`/`pnpm/action-setup` in a previous step, or from the runner image), the action reuses them. Otherwise it installs them via `asdf` automatically — no extra setup steps required. For fastest startup in JS monorepos, you can still `pnpm add -D @repo-toolkit/confluence && pnpm install` beforehand to reuse `node_modules/.bin`.
 
 ### Dry-run Planning
 
@@ -76,6 +73,7 @@ touching Confluence:
     asdf-version: 'v0.20.0'
     nodejs-version: '26.5.0'
     pnpm-version: '11.15.0'
+    repo-toolkit-version: 'latest' # or '0.13.0'
 ```
 
 ## Inputs
@@ -97,6 +95,8 @@ touching Confluence:
 | `asdf-version` | No | `v0.20.0` | `asdf` version to install when `node` is missing. |
 | `nodejs-version` | No | `26.5.0` | Node.js version to install with `asdf` when `node` is missing. |
 | `pnpm-version` | No | `11.15.0` | pnpm version to install with `asdf` when `pnpm` is missing. |
+| `repo-toolkit-version` | No | `latest` | `repo-toolkit` version to install via `asdf` when binary is not found (`latest` resolves to newest release). |
+| `repo-toolkit-plugin-url` | No | `https://github.com/egose/repo-toolkit.git` | Git URL for the `repo-toolkit` asdf plugin. |
 
 ## Security Notes
 
@@ -107,8 +107,9 @@ touching Confluence:
 ## Notes
 
 - If `node` is missing, the action installs `asdf` first, then Node.js, automatically before resolving the CLI.
-- If `pnpm` is missing, it is installed via `asdf` as well so the consuming repo's `pnpm install` step can run.
-- Existing `node` and `pnpm` installations are reused as-is.
+- If `pnpm` is missing, it is installed via `asdf` as well so the consuming repo's `pnpm install` step can run (optional for `asdf` toolkit path).
+- If `repo-toolkit-confluence` is not found in `node_modules/.bin` or `PATH`, the action installs `repo-toolkit` via `asdf` (`asdf plugin add repo-toolkit https://github.com/egose/repo-toolkit.git && asdf install repo-toolkit <version>`), which requires `node` and `jq`.
+- Existing `node`/`pnpm`/`repo-toolkit` installations are reused as-is.
 - `asdf` install reuses the `asdf-install` action (`../asdf-install/install.sh`); the asdf shims directory is added to `GITHUB_PATH` so subsequent workflow steps also see the installed tools.
 
 ## Binary Resolution
@@ -118,9 +119,9 @@ touching Confluence:
 1. `confluence-bin` input (explicit override).
 2. `<workspace>/node_modules/.bin/repo-toolkit-confluence` (when the consuming repo listed `@repo-toolkit/confluence` as a dep).
 3. `<action_path>/node_modules/.bin/repo-toolkit-confluence` (for repo-internal fixture tests).
-4. `repo-toolkit-confluence` in `PATH`.
-5. `npx -y @repo-toolkit/confluence` (last resort; downloads on every run — not recommended for production).
+4. `repo-toolkit-confluence` in `PATH` (including `asdf` shims).
+5. `asdf install repo-toolkit <version>` (persistent; installs `repo-toolkit` via `asdf` when `node`+`jq` are available — preferred fallback for zero-setup consumers).
+6. `npx -y @repo-toolkit/confluence` (last resort; downloads on every run — not recommended for production).
 
-Add `@repo-toolkit/confluence` to the consuming repo's `devDependencies` (or
-`dependencies`) and run `pnpm install` before invoking the action for the fastest
-startup.
+For fastest startup in JS repos, add `@repo-toolkit/confluence` to the consuming repo's `devDependencies` (or
+`dependencies`) and run `pnpm install` before invoking the action. For zero-setup (only `actions/checkout`), the action auto-provisions via `asdf`.
