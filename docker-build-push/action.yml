@@ -344,6 +344,12 @@ runs:
     run: |
       set -euo pipefail
 
+      verify_config_digest=true
+      if ! command -v jq >/dev/null 2>&1; then
+        verify_config_digest=false
+        printf '::warning::jq is not installed; published image config digest verification will be skipped.\n'
+      fi
+
       while IFS= read -r tag; do
         [[ -n "$tag" ]] || continue
         docker image push "$tag"
@@ -357,13 +363,17 @@ runs:
 
       while IFS= read -r tag; do
         [[ -n "$tag" ]] || continue
-        published_config_digest="$(docker buildx imagetools inspect "$tag" --format '{{.Manifest.Config.Digest}}')"
         published_manifest_digest="$(docker buildx imagetools inspect "$tag" --format '{{.Manifest.Digest}}')"
-        if [[ "$published_config_digest" != "$IMAGE_CONFIG_DIGEST" ]]; then
-          printf 'Published digest mismatch for %s: local %s, published %s\n' "$tag" "$IMAGE_CONFIG_DIGEST" "$published_config_digest" >&2
-          exit 1
+        if [[ "$verify_config_digest" == true ]]; then
+          published_config_digest="$(docker buildx imagetools inspect "$tag" --raw | jq -er '.config.digest')"
+          if [[ "$published_config_digest" != "$IMAGE_CONFIG_DIGEST" ]]; then
+            printf 'Published digest mismatch for %s: local %s, published %s\n' "$tag" "$IMAGE_CONFIG_DIGEST" "$published_config_digest" >&2
+            exit 1
+          fi
+          printf -- '- `%s`: manifest `%s`, config digest matches local `%s`\n' "$tag" "$published_manifest_digest" "$published_config_digest" >> "$GITHUB_STEP_SUMMARY"
+        else
+          printf -- '- `%s`: manifest `%s`, config digest verification skipped (`jq` unavailable)\n' "$tag" "$published_manifest_digest" >> "$GITHUB_STEP_SUMMARY"
         fi
-        printf -- '- `%s`: manifest `%s`, config digest matches local `%s`\n' "$tag" "$published_manifest_digest" "$published_config_digest" >> "$GITHUB_STEP_SUMMARY"
       done <<< "$DOCKER_TAGS"
 
       printf 'manifest-digest=%s\n' "$manifest_digest" >> "$GITHUB_OUTPUT"
