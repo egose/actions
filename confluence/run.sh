@@ -48,13 +48,31 @@ ensure_asdf_available() {
   if command -v asdf >/dev/null 2>&1; then
     return 0
   fi
-  echo "➡️ Installing asdf ${CONFLUENCE_ASDF_VERSION:-v0.20.0} for repo-toolkit..."
-  ASDF_VERSION="${CONFLUENCE_ASDF_VERSION:-v0.20.0}" bash "${CONFLUENCE_ACTION_PATH:?}/../asdf-install/install.sh"
+  echo >&2 "➡️ Installing asdf ${CONFLUENCE_ASDF_VERSION:-v0.20.0} for repo-toolkit..."
+  ASDF_VERSION="${CONFLUENCE_ASDF_VERSION:-v0.20.0}" bash "${CONFLUENCE_ACTION_PATH:?}/../asdf-install/install.sh" >&2
   export PATH="${RUNNER_TEMP:-/tmp}/asdf-bin:${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
   if ! command -v asdf >/dev/null 2>&1; then
     echo >&2 "❌ asdf is unavailable after bootstrap"
     return 1
   fi
+}
+
+resolve_repo_toolkit_version() {
+  local requested_version="$1"
+
+  if [[ "$requested_version" != "latest" ]]; then
+    echo "$requested_version"
+    return 0
+  fi
+
+  local resolved_version
+  resolved_version="$(asdf list all repo-toolkit 2>/dev/null | grep -E '^[[:space:]]*[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?[[:space:]]*$' | tr -d '[:space:]' | sort -V | tail -n1 || true)"
+  if [[ -z "$resolved_version" ]]; then
+    echo >&2 "⚠️  Unable to resolve the latest repo-toolkit version from asdf"
+    return 1
+  fi
+
+  echo "$resolved_version"
 }
 
 install_repo_toolkit_via_asdf() {
@@ -76,38 +94,36 @@ install_repo_toolkit_via_asdf() {
   ensure_asdf_available || return 1
 
   local toolkit_version="${CONFLUENCE_REPO_TOOLKIT_VERSION:-latest}"
+  local install_version="$toolkit_version"
   local toolkit_plugin_url="${CONFLUENCE_REPO_TOOLKIT_PLUGIN_URL:-https://github.com/egose/repo-toolkit.git}"
-
-  echo >&2 "➡️  repo-toolkit-confluence not found; installing repo-toolkit ${toolkit_version} via asdf..."
 
   # Add plugin if not already present
   if ! asdf plugin list 2>/dev/null | grep -q "^repo-toolkit$"; then
-    asdf plugin add repo-toolkit "$toolkit_plugin_url" || true
+    asdf plugin add repo-toolkit "$toolkit_plugin_url" >&2 || true
   fi
 
-  if ! asdf install repo-toolkit "$toolkit_version"; then
-    echo >&2 "⚠️  asdf repo-toolkit install failed for version ${toolkit_version}"
+  install_version="$(resolve_repo_toolkit_version "$toolkit_version")" || return 1
+  if [[ "$toolkit_version" == "latest" ]]; then
+    echo >&2 "➡️  repo-toolkit-confluence not found; installing repo-toolkit latest via asdf (resolved to ${install_version})..."
+  else
+    echo >&2 "➡️  repo-toolkit-confluence not found; installing repo-toolkit ${install_version} via asdf..."
+  fi
+
+  if ! asdf install repo-toolkit "$install_version" >&2; then
+    echo >&2 "⚠️  asdf repo-toolkit install failed for version ${install_version}"
     return 1
   fi
 
-  # Resolve 'latest' to concrete version for shim compatibility
-  local actual_version="$toolkit_version"
-  if [[ "$actual_version" == "latest" ]]; then
-    actual_version=$(asdf latest repo-toolkit 2>/dev/null || asdf list repo-toolkit 2>/dev/null | tr -s ' ' '\n' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+' | tail -n1)
-    # fallback: list installs directory
-    if [[ -z "$actual_version" || "$actual_version" == "latest" ]]; then
-      actual_version=$(ls "${ASDF_DATA_DIR:-$HOME/.asdf}/installs/repo-toolkit" 2>/dev/null | sort -V | tail -n1)
-    fi
-  fi
+  local actual_version="$install_version"
   if [[ -n "$actual_version" && "$actual_version" != "latest" ]]; then
     # Ensure shim resolves without .tool-versions in consumer repo
-    asdf global repo-toolkit "$actual_version" 2>/dev/null || true
+    asdf global repo-toolkit "$actual_version" >&2 || true
   fi
 
   local shims_dir="${ASDF_DATA_DIR:-$HOME/.asdf}/shims"
   echo "$shims_dir" >> "$GITHUB_PATH" 2>/dev/null || true
   export PATH="$shims_dir:$PATH"
-  asdf reshim repo-toolkit 2>/dev/null || asdf reshim 2>/dev/null || true
+  asdf reshim repo-toolkit >&2 || asdf reshim >&2 || true
 
   # Prefer shim, but also try direct install path (bypasses .tool-versions requirement)
   if command -v repo-toolkit-confluence >/dev/null 2>&1; then
