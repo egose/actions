@@ -96,6 +96,7 @@ install_repo_toolkit_via_asdf() {
   local toolkit_version="${CONFLUENCE_REPO_TOOLKIT_VERSION:-latest}"
   local install_version="$toolkit_version"
   local toolkit_plugin_url="${CONFLUENCE_REPO_TOOLKIT_PLUGIN_URL:-https://github.com/egose/repo-toolkit.git}"
+  CONFLUENCE_RESOLVED_BIN=""
 
   # Add plugin if not already present
   if ! asdf plugin list 2>/dev/null | grep -q "^repo-toolkit$"; then
@@ -115,9 +116,10 @@ install_repo_toolkit_via_asdf() {
   fi
 
   local actual_version="$install_version"
+  local direct_bin="${ASDF_DATA_DIR:-$HOME/.asdf}/installs/repo-toolkit/${actual_version}/bin/repo-toolkit-confluence"
   if [[ -n "$actual_version" && "$actual_version" != "latest" ]]; then
-    # Ensure shim resolves without .tool-versions in consumer repo
-    asdf global repo-toolkit "$actual_version" >&2 || true
+    # Best effort: asdf >=0.16 uses `set`, older versions used `global`.
+    asdf set -u repo-toolkit "$actual_version" >&2 || true
   fi
 
   local shims_dir="${ASDF_DATA_DIR:-$HOME/.asdf}/shims"
@@ -125,21 +127,16 @@ install_repo_toolkit_via_asdf() {
   export PATH="$shims_dir:$PATH"
   asdf reshim repo-toolkit >&2 || asdf reshim >&2 || true
 
-  # Prefer shim, but also try direct install path (bypasses .tool-versions requirement)
-  if command -v repo-toolkit-confluence >/dev/null 2>&1; then
+  # Prefer shim when it is actually runnable for the current workspace.
+  if asdf which repo-toolkit-confluence >/dev/null 2>&1 && command -v repo-toolkit-confluence >/dev/null 2>&1; then
     echo >&2 "✅ repo-toolkit ${actual_version:-$toolkit_version} installed via asdf"
     return 0
   fi
   if [[ -n "$actual_version" ]]; then
-    local direct_bin="${ASDF_DATA_DIR:-$HOME/.asdf}/installs/repo-toolkit/${actual_version}/bin/repo-toolkit-confluence"
     if [[ -x "$direct_bin" ]]; then
       echo >&2 "✅ repo-toolkit ${actual_version} installed via asdf (direct bin)"
-      # symlink into shims dir for PATH lookup
-      ln -sf "$direct_bin" "$shims_dir/repo-toolkit-confluence" 2>/dev/null || true
-      export PATH="$shims_dir:$PATH"
-      if command -v repo-toolkit-confluence >/dev/null 2>&1; then
-        return 0
-      fi
+      CONFLUENCE_RESOLVED_BIN="$direct_bin"
+      return 0
     fi
   fi
 
@@ -180,6 +177,10 @@ resolve_binary() {
 
   # 5. asdf repo-toolkit fallback (persistent, preferred over npx)
   if install_repo_toolkit_via_asdf; then
+    if [[ -n "${CONFLUENCE_RESOLVED_BIN:-}" && -x "${CONFLUENCE_RESOLVED_BIN}" ]]; then
+      echo "${CONFLUENCE_RESOLVED_BIN}"
+      return 0
+    fi
     if command -v repo-toolkit-confluence >/dev/null 2>&1; then
       echo "repo-toolkit-confluence"
       return 0
