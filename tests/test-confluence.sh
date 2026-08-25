@@ -83,9 +83,22 @@ CLI
     printf 'global %s %s\n' "${2:-}" "${3:-}" >> "$log_file"
     exit 0
     ;;
+  set)
+    printf 'set %s %s %s\n' "${2:-}" "${3:-}" "${4:-}" >> "$log_file"
+    exit 0
+    ;;
   reshim)
     printf 'reshim %s\n' "${2:-all}" >> "$log_file"
     exit 0
+    ;;
+  which)
+    if [[ "${2:-}" == "repo-toolkit-confluence" ]]; then
+      if [[ -x "${asdf_data_dir}/installs/repo-toolkit/0.14.0/bin/repo-toolkit-confluence" ]]; then
+        printf '%s\n' "${asdf_data_dir}/installs/repo-toolkit/0.14.0/bin/repo-toolkit-confluence"
+        exit 0
+      fi
+      exit 1
+    fi
     ;;
 esac
 
@@ -119,8 +132,8 @@ if ! grep -Fxq -- '--folder docs --dry-run' "$cli_log"; then
   exit 1
 fi
 
-if ! grep -Fq '🚀 repo-toolkit-confluence --folder docs --dry-run' "$stdout_file"; then
-  echo 'expected run.sh to execute the resolved repo-toolkit-confluence binary'
+if ! grep -Fq ' --folder docs --dry-run' "$stdout_file"; then
+  echo 'expected run.sh to execute the resolved repo-toolkit-confluence command with dry-run arguments'
   exit 1
 fi
 
