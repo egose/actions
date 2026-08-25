@@ -66,7 +66,7 @@ resolve_repo_toolkit_version() {
   fi
 
   local resolved_version
-  resolved_version="$(asdf list all repo-toolkit 2>/dev/null | grep -E '^[[:space:]]*[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?[[:space:]]*$' | tr -d '[:space:]' | sort -V | tail -n1 || true)"
+  resolved_version="$(asdf list all repo-toolkit 2>/dev/null | grep -E '^[[:space:]]*[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?[[:space:]]*$' | sort -V | tail -n1 | tr -d '[:space:]' || true)"
   if [[ -z "$resolved_version" ]]; then
     echo >&2 "⚠️  Unable to resolve the latest repo-toolkit version from asdf"
     return 1
