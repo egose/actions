@@ -1,0 +1,10 @@
+services:
+  web:
+    image: nginx:alpine
+    ports:
+    - 127.0.0.1:8000:80
+    # Keep lightweight; no healthcheck – readiness is via HTTP probe
+  init:
+    image: alpine:3.18
+    command: [sh, -c, echo init done && exit 0]
+    restart: no

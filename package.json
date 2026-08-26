@@ -24,7 +24,7 @@
     "pre-commit": "pre-commit run --all-files",
     "precommit": "npm run pre-commit",
     "lint": "npm run actionlint && npm run pre-commit",
-    "test:shell": "bash tests/test-confluence.sh && bash tests/test-install-packages.sh && bash tests/test-release-tag.sh",
+    "test:shell": "bash tests/test-confluence.sh && bash tests/test-compose-sandbox.sh && bash tests/test-install-packages.sh && bash tests/test-release-tag.sh",
     "release": "release-it",
     "changelog": "repo-toolkit-changelog"
   },
@@ -33,8 +33,9 @@
     "@commitlint/config-conventional": "^21.2.2",
     "@commitlint/format": "^21.2.2",
     "@release-it/bumper": "^8.0.0",
-    "@repo-toolkit/changelog": "^0.13.0",
-    "@repo-toolkit/confluence": "^0.13.0",
+    "@repo-toolkit/changelog": "^0.17.0",
+    "@repo-toolkit/compose-sandbox": "^0.17.0",
+    "@repo-toolkit/confluence": "^0.17.0",
     "release-it": "^21.0.2"
   }
 }

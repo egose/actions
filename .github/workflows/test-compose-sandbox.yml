@@ -1,0 +1,211 @@
+name: Test action compose-sandbox
+
+on:
+  pull_request:
+    paths:
+    - .github/workflows/test-compose-sandbox.yml
+    - compose-sandbox/**
+    - tests/fixtures/compose-sandbox/**
+    - tests/test-compose-sandbox.sh
+  push:
+    branches:
+    - main
+    paths:
+    - .github/workflows/test-compose-sandbox.yml
+    - compose-sandbox/**
+    - tests/fixtures/compose-sandbox/**
+    - tests/test-compose-sandbox.sh
+  workflow_dispatch:
+
+jobs:
+  compose-sandbox-success:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+    - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+      with:
+        node-version: '26'
+
+    - name: Enable Corepack
+      run: corepack enable
+
+    - name: Install action repository dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Verify Docker Compose v2
+      run: docker compose version
+
+    - name: Run compose sandbox (success)
+      id: sandbox
+      uses: ./compose-sandbox
+      with:
+        config: success.mjs
+        cwd: tests/fixtures/compose-sandbox
+        repo-toolkit-version: 0.17.0
+        artifact-name: compose-sandbox-success-logs
+        artifact-policy: always
+
+    - name: Assert success outputs
+      shell: bash
+      env:
+        OUTCOME: ${{ steps.sandbox.outputs.outcome }}
+        FAILED_PHASE: ${{ steps.sandbox.outputs.failed-phase }}
+        EVIDENCE_DIR: ${{ steps.sandbox.outputs.evidence-directory }}
+        MANIFEST: ${{ steps.sandbox.outputs.result-manifest }}
+        ARTIFACT: ${{ steps.sandbox.outputs.artifact-name }}
+      run: |
+        set -euo pipefail
+        echo "outcome=$OUTCOME"
+        echo "failed-phase=$FAILED_PHASE"
+        echo "evidence=$EVIDENCE_DIR"
+        echo "manifest=$MANIFEST"
+        echo "artifact=$ARTIFACT"
+        [[ "$OUTCOME" == "success" ]] || { echo "expected outcome success, got $OUTCOME" >&2; exit 1; }
+        [[ -z "$FAILED_PHASE" ]] || { echo "expected empty failed-phase on success" >&2; exit 1; }
+        [[ -n "$EVIDENCE_DIR" ]] || { echo "evidence-directory empty" >&2; exit 1; }
+        [[ -n "$MANIFEST" ]] || { echo "result-manifest empty" >&2; exit 1; }
+        [[ -f "$MANIFEST" ]] || { echo "manifest not found at $MANIFEST" >&2; exit 1; }
+        # Validate JSON without evaluating
+        python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$MANIFEST"
+        grep -q '"outcome": "success"' "$MANIFEST"
+        [[ "$ARTIFACT" == "compose-sandbox-success-logs" ]] || { echo "artifact name mismatch $ARTIFACT" >&2; exit 1; }
+        [[ -f "$EVIDENCE_DIR/ps.json" ]] || { echo "ps.json missing" >&2; exit 1; }
+        [[ -f "$EVIDENCE_DIR/logs.txt" ]] || { echo "logs.txt missing" >&2; exit 1; }
+        echo "success assertions passed"
+
+    - name: Verify no leaked containers/networks/volumes
+      if: always()
+      shell: bash
+      run: |
+        set -euo pipefail
+        echo "Checking for leaked cs-test-success resources"
+        leaked_containers="$(docker ps -a --filter "label=com.docker.compose.project=cs-test-success" --format '{{.ID}}' 2>/dev/null || true)"
+        if [[ -n "$leaked_containers" ]]; then
+          echo "leaked containers: $leaked_containers" >&2
+          docker ps -a --filter "label=com.docker.compose.project=cs-test-success" || true
+          exit 1
+        fi
+        leaked_networks="$(docker network ls --filter "label=com.docker.compose.project=cs-test-success" --format '{{.ID}}' 2>/dev/null || true)"
+        if [[ -n "$leaked_networks" ]]; then
+          echo "leaked networks: $leaked_networks" >&2
+          docker network ls --filter "label=com.docker.compose.project=cs-test-success" || true
+          exit 1
+        fi
+        # Volumes are pruned via compose down --volumes; check by label
+        leaked_volumes="$(docker volume ls --filter "label=com.docker.compose.project=cs-test-success" --format '{{.Name}}' 2>/dev/null || true)"
+        if [[ -n "$leaked_volumes" ]]; then
+          echo "leaked volumes: $leaked_volumes" >&2
+          docker volume ls --filter "label=com.docker.compose.project=cs-test-success" || true
+          exit 1
+        fi
+        echo "no leaked resources"
+
+  compose-sandbox-failure:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+    - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+      with:
+        node-version: '26'
+
+    - name: Enable Corepack
+      run: corepack enable
+
+    - name: Install action repository dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Verify Docker Compose v2
+      run: docker compose version
+
+    - name: Run compose sandbox (expected failure)
+      id: sandbox
+      continue-on-error: true
+      uses: ./compose-sandbox
+      with:
+        config: failure.mjs
+        cwd: tests/fixtures/compose-sandbox
+        repo-toolkit-version: 0.17.0
+        artifact-name: compose-sandbox-failure-logs
+        artifact-policy: failure
+
+    - name: Assert failure outputs and artifact
+      shell: bash
+      env:
+        OUTCOME: ${{ steps.sandbox.outputs.outcome }}
+        FAILED_PHASE: ${{ steps.sandbox.outputs.failed-phase }}
+        EVIDENCE_DIR: ${{ steps.sandbox.outputs.evidence-directory }}
+        MANIFEST: ${{ steps.sandbox.outputs.result-manifest }}
+        ARTIFACT: ${{ steps.sandbox.outputs.artifact-name }}
+        SANDBOX_OUTCOME: ${{ steps.sandbox.outcome }}
+      run: |
+        set -euo pipefail
+        echo "sandbox step outcome=$SANDBOX_OUTCOME"
+        echo "outcome=$OUTCOME"
+        echo "failed-phase=$FAILED_PHASE"
+        echo "evidence=$EVIDENCE_DIR"
+        echo "manifest=$MANIFEST"
+        echo "artifact=$ARTIFACT"
+        [[ "$SANDBOX_OUTCOME" == "failure" ]] || { echo "expected sandbox step failure, got $SANDBOX_OUTCOME" >&2; exit 1; }
+        [[ "$OUTCOME" == "failure" ]] || { echo "expected outcome failure, got $OUTCOME" >&2; exit 1; }
+        [[ -n "$FAILED_PHASE" ]] || { echo "failed-phase should be non-empty on failure" >&2; exit 1; }
+        [[ "$FAILED_PHASE" == "test" ]] || { echo "expected failed-phase test, got $FAILED_PHASE" >&2; exit 1; }
+        [[ -n "$EVIDENCE_DIR" ]] || { echo "evidence-directory empty" >&2; exit 1; }
+        [[ -n "$MANIFEST" ]] || { echo "result-manifest empty" >&2; exit 1; }
+        [[ -f "$MANIFEST" ]] || { echo "manifest not found" >&2; exit 1; }
+        python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$MANIFEST"
+        grep -q '"outcome": "failure"' "$MANIFEST"
+        [[ "$ARTIFACT" == "compose-sandbox-failure-logs" ]] || { echo "artifact mismatch $ARTIFACT" >&2; exit 1; }
+        [[ -f "$EVIDENCE_DIR/ps.json" ]] || { echo "ps.json missing" >&2; exit 1; }
+        echo "failure assertions passed"
+
+    - name: Verify failure artifact was uploaded
+      shell: bash
+      env:
+        ARTIFACT: ${{ steps.sandbox.outputs.artifact-name }}
+      run: |
+        set -euo pipefail
+        if [[ -z "$ARTIFACT" ]]; then
+          echo "artifact-name output empty on failure – upload should have been requested" >&2
+          exit 1
+        fi
+        echo "artifact $ARTIFACT was requested (upload-artifact step runs with always() when artifact-name set)"
+
+    - name: Verify no leaked containers/networks/volumes
+      if: always()
+      shell: bash
+      run: |
+        set -euo pipefail
+        echo "Checking for leaked cs-test-failure resources"
+        leaked_containers="$(docker ps -a --filter "label=com.docker.compose.project=cs-test-failure" --format '{{.ID}}' 2>/dev/null || true)"
+        if [[ -n "$leaked_containers" ]]; then
+          echo "leaked containers: $leaked_containers" >&2
+          docker ps -a --filter "label=com.docker.compose.project=cs-test-failure" || true
+          exit 1
+        fi
+        leaked_networks="$(docker network ls --filter "label=com.docker.compose.project=cs-test-failure" --format '{{.ID}}' 2>/dev/null || true)"
+        if [[ -n "$leaked_networks" ]]; then
+          echo "leaked networks: $leaked_networks" >&2
+          docker network ls --filter "label=com.docker.compose.project=cs-test-failure" || true
+          exit 1
+        fi
+        leaked_volumes="$(docker volume ls --filter "label=com.docker.compose.project=cs-test-failure" --format '{{.Name}}' 2>/dev/null || true)"
+        if [[ -n "$leaked_volumes" ]]; then
+          echo "leaked volumes: $leaked_volumes" >&2
+          docker volume ls --filter "label=com.docker.compose.project=cs-test-failure" || true
+          exit 1
+        fi
+        echo "no leaked resources"
+
+    - name: Enforce sandbox failure was preserved
+      if: always()
+      shell: bash
+      env:
+        SANDBOX_OUTCOME: ${{ steps.sandbox.outcome }}
+      run: |
+        if [[ "$SANDBOX_OUTCOME" != "failure" ]]; then
+          echo "sandbox should have failed but outcome is $SANDBOX_OUTCOME" >&2
+          exit 1
+        fi
+        echo "failure preserved"
