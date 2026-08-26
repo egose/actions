@@ -1,0 +1,87 @@
+name: Run Docker Compose Sandbox
+description: Run a repository-defined Docker Compose sandbox through the repo-toolkit compose-sandbox lifecycle engine
+inputs:
+  config:
+    description: Path to the compose-sandbox config file (JSON, .mjs, or .cjs) relative to cwd
+    required: true
+  cwd:
+    description: Working directory the engine resolves config and relative paths against
+    required: false
+    default: ${{ github.workspace }}
+  compose-sandbox-bin:
+    description: Path to the repo-toolkit-compose-sandbox binary. Leave empty to auto-resolve from workspace node_modules/.bin, PATH, or asdf.
+    required: false
+    default: ''
+  repo-toolkit-version:
+    description: Exact repo-toolkit version to install via asdf when the binary is not found. Must be an exact semver (e.g. 0.17.0), not latest.
+    required: false
+    default: 0.17.0
+  repo-toolkit-plugin-url:
+    description: Git URL for the repo-toolkit asdf plugin
+    required: false
+    default: https://github.com/egose/repo-toolkit.git
+  artifact-name:
+    description: Name for the uploaded evidence artifact
+    required: false
+    default: compose-sandbox-logs
+  artifact-policy:
+    description: When to upload the evidence artifact. One of failure, always, never. Default failure uploads only when the sandbox fails.
+    required: false
+    default: failure
+  artifact-retention-days:
+    description: Retention days for the uploaded artifact. Leave empty for the repository default.
+    required: false
+    default: ''
+outputs:
+  outcome:
+    description: Lifecycle outcome from the engine result manifest (success or failure)
+    value: ${{ steps.sandbox.outputs.outcome }}
+  failed-phase:
+    description: Phase that failed when outcome is failure (validate, prepare, preflight, start, readiness, test, evidence, or cleanup)
+    value: ${{ steps.sandbox.outputs.failed-phase }}
+  evidence-directory:
+    description: Absolute or cwd-relative path to the engine evidence directory containing ps.json, logs.txt, and result.json
+    value: ${{ steps.sandbox.outputs.evidence-directory }}
+  result-manifest:
+    description: Absolute or cwd-relative path to the engine result manifest (result.json) inside the evidence directory
+    value: ${{ steps.sandbox.outputs.result-manifest }}
+  artifact-name:
+    description: Name of the uploaded artifact when an upload was performed, otherwise empty
+    value: ${{ steps.sandbox.outputs.artifact-name }}
+runs:
+  using: composite
+  steps:
+  - id: sandbox
+    name: Run compose sandbox engine
+    shell: bash
+    env:
+      COMPOSE_SANDBOX_INPUT_CONFIG: ${{ inputs.config }}
+      COMPOSE_SANDBOX_INPUT_CWD: ${{ inputs.cwd }}
+      COMPOSE_SANDBOX_INPUT_BIN: ${{ inputs.compose-sandbox-bin }}
+      COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION: ${{ inputs.repo-toolkit-version }}
+      COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_PLUGIN_URL: ${{ inputs.repo-toolkit-plugin-url }}
+      COMPOSE_SANDBOX_INPUT_ARTIFACT_NAME: ${{ inputs.artifact-name }}
+      COMPOSE_SANDBOX_INPUT_ARTIFACT_POLICY: ${{ inputs.artifact-policy }}
+      COMPOSE_SANDBOX_INPUT_ARTIFACT_RETENTION_DAYS: ${{ inputs.artifact-retention-days }}
+      COMPOSE_SANDBOX_ACTION_PATH: ${{ github.action_path }}
+    run: bash "${{ github.action_path }}/run.sh"
+  - name: Write sandbox summary
+    if: always()
+    shell: bash
+    env:
+      COMPOSE_SANDBOX_ACTION_PATH: ${{ github.action_path }}
+      COMPOSE_SANDBOX_INPUT_ARTIFACT_NAME: ${{ inputs.artifact-name }}
+      COMPOSE_SANDBOX_INPUT_ARTIFACT_POLICY: ${{ inputs.artifact-policy }}
+      COMPOSE_SANDBOX_RESULT_MANIFEST: ${{ steps.sandbox.outputs.result-manifest }}
+      COMPOSE_SANDBOX_EVIDENCE_DIRECTORY: ${{ steps.sandbox.outputs.evidence-directory }}
+      COMPOSE_SANDBOX_OUTCOME: ${{ steps.sandbox.outputs.outcome }}
+      COMPOSE_SANDBOX_FAILED_PHASE: ${{ steps.sandbox.outputs.failed-phase }}
+    run: bash "${{ github.action_path }}/summarize.sh"
+  - name: Upload sandbox evidence
+    if: ${{ always() && steps.sandbox.outputs.artifact-name != '' && steps.sandbox.outputs.evidence-directory != '' }}
+    uses: actions/upload-artifact@65462800fd760344a2a7ede2ed4f50aede65e8c
+    with:
+      name: ${{ steps.sandbox.outputs.artifact-name }}
+      path: ${{ steps.sandbox.outputs.evidence-directory }}
+      retention-days: ${{ inputs.artifact-retention-days }}
+      if-no-files-found: warn
