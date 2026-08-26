@@ -123,8 +123,8 @@ case "${1:-}" in
   install)
     if [[ "${2:-}" == "repo-toolkit" ]]; then
       printf 'install %s\n' "${3:-}" >> "$log_file"
-      # only allow pinned version 0.17.0 for compose tests
-      if [[ "${3:-}" != "0.17.0" ]]; then
+      # only allow pinned version 0.18.0 for compose tests
+      if [[ "${3:-}" != "0.18.0" ]]; then
         printf 'unexpected version %s\n' "${3:-}" >&2
         exit 1
       fi
@@ -151,8 +151,8 @@ CLI
   reshim) printf 'reshim %s\n' "${2:-all}" >> "$log_file"; exit 0 ;;
   which)
     if [[ "${2:-}" == "repo-toolkit-compose-sandbox" ]]; then
-      if [[ -x "${asdf_data_dir}/installs/repo-toolkit/0.17.0/bin/repo-toolkit-compose-sandbox" ]]; then
-        printf '%s\n' "${asdf_data_dir}/installs/repo-toolkit/0.17.0/bin/repo-toolkit-compose-sandbox"
+      if [[ -x "${asdf_data_dir}/installs/repo-toolkit/0.18.0/bin/repo-toolkit-compose-sandbox" ]]; then
+        printf '%s\n' "${asdf_data_dir}/installs/repo-toolkit/0.18.0/bin/repo-toolkit-compose-sandbox"
         exit 0
       fi
       exit 1
@@ -260,7 +260,7 @@ test_explicit() {
   export FAKE_ASDF_LOG="$asdf_log"
   export FAKE_CLI_LOG="$cli_log"
 
-  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_BIN=$explicit_bin" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=0.17.0"
+  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_BIN=$explicit_bin" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=0.18.0"
 
   local code
   code="$(cat "$ws/exit_code")"
@@ -298,7 +298,7 @@ test_workspace() {
   export FAKE_ASDF_LOG="$asdf_log"
   export FAKE_CLI_LOG="$cli_log"
 
-  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=0.17.0"
+  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=0.18.0"
 
   local code
   code="$(cat "$ws/exit_code")"
@@ -335,7 +335,7 @@ test_path() {
   local fake_action="${ws}/fake-action"
   mkdir -p "$fake_action"
 
-  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=0.17.0" "COMPOSE_SANDBOX_ACTION_PATH=$fake_action"
+  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=0.18.0" "COMPOSE_SANDBOX_ACTION_PATH=$fake_action"
 
   local code
   code="$(cat "$ws/exit_code")"
@@ -371,12 +371,12 @@ test_asdf() {
   local fake_action="${ws}/fake-action"
   mkdir -p "$fake_action"
 
-  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=0.17.0" "COMPOSE_SANDBOX_ACTION_PATH=$fake_action"
+  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=0.18.0" "COMPOSE_SANDBOX_ACTION_PATH=$fake_action"
 
   local code
   code="$(cat "$ws/exit_code")"
   assert_eq "$code" "0" "asdf: exit"
-  assert_contains "$asdf_log" "install 0.17.0" "asdf: installed exact version"
+  assert_contains "$asdf_log" "install 0.18.0" "asdf: installed exact version"
   assert_contains "$cli_log" "--config" "asdf: cli invoked"
   rm -rf "$ws"
   echo "✓ asdf pinned"
@@ -413,7 +413,7 @@ test_injection() {
   # The config file path itself with spaces/semicolons – we create cwd and then pass this as config input.
   # Our run.sh should pass it as single arg without shell evaluation, so marker not created.
 
-  run_sandbox "$ws" "$cwd_with_space" "$malicious_config" "COMPOSE_SANDBOX_INPUT_BIN=$explicit_bin" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=0.17.0"
+  run_sandbox "$ws" "$cwd_with_space" "$malicious_config" "COMPOSE_SANDBOX_INPUT_BIN=$explicit_bin" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=0.18.0"
 
   assert_file_not_exists "$marker" "injection: marker should not be created"
   # Check that cli received the malicious string as single ARG
@@ -448,11 +448,11 @@ test_version_reject() {
   # also check error message mentions semver
   assert_contains "${ws}/err.log" "exact semver" "version reject latest msg"
 
-  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=^0.17.0"
+  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=^0.18.0"
   code="$(cat "$ws/exit_code")"
   if [[ "$code" == "0" ]]; then echo "FAIL version reject ^ should fail" >&2; exit 1; fi
 
-  # empty version should fallback to default 0.17.0 and succeed when bin is available
+  # empty version should fallback to default 0.18.0 and succeed when bin is available
   local good_bin="${ws}/good-bin/repo-toolkit-compose-sandbox"
   mkdir -p "$(dirname "$good_bin")"
   make_fake_bin "$good_bin" "success"
@@ -487,7 +487,7 @@ test_toolkit_failure() {
   export FAKE_ASDF_LOG="$asdf_log"
   export FAKE_CLI_LOG="$cli_log"
 
-  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_BIN=$explicit_bin" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=0.17.0"
+  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_BIN=$explicit_bin" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=0.18.0"
 
   local code
   code="$(cat "$ws/exit_code")"
@@ -602,7 +602,7 @@ MB
   export FAKE_ASDF_LOG="${ws}/asdf.log"
   export FAKE_CLI_LOG="$cli_log"
 
-  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_BIN=$mal_bin" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=0.17.0" "COMPOSE_SANDBOX_INPUT_ARTIFACT_POLICY=failure"
+  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_BIN=$mal_bin" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=0.18.0" "COMPOSE_SANDBOX_INPUT_ARTIFACT_POLICY=failure"
   local code
   code="$(cat "$ws/exit_code")"
   assert_eq "$code" "2" "malformed: exit preserved"
@@ -639,7 +639,7 @@ echo "$*" >> "${FAKE_CLI_LOG:?}"
 exit 0
 NM
   chmod 755 "$nomani_bin"
-  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_BIN=$nomani_bin" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=0.17.0"
+  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_BIN=$nomani_bin" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=0.18.0"
   code="$(cat "$ws/exit_code")"
   assert_eq "$code" "0" "missing manifest success exit"
   outcome="$(get_output "$ws" "outcome")"
@@ -652,7 +652,7 @@ echo "$*" >> "${FAKE_CLI_LOG:?}"
 exit 3
 NM2
   chmod 755 "$nomani_bin"
-  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_BIN=$nomani_bin" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=0.17.0"
+  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_BIN=$nomani_bin" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=0.18.0"
   code="$(cat "$ws/exit_code")"
   assert_eq "$code" "3" "missing manifest failure exit"
   outcome="$(get_output "$ws" "outcome")"
@@ -699,7 +699,7 @@ EOS
   export FAKE_ASDF_LOG="${ws}/asdf.log"
   export FAKE_CLI_LOG="$cli_log"
   # Also set secret in env to simulate config env leakage attempt – run.sh should not print it
-  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_BIN=$secret_bin" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=0.17.0"
+  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_BIN=$secret_bin" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=0.18.0"
 
   # Check that GITHUB_OUTPUT does not contain secret (our sanitize should have stripped? Actually manifest still has secret, but we sanitize phase/outcome only – evidenceFiles not secret. The raw manifest has secret, but our output only includes outcome/phase, not raw errors. So output should not contain secret.)
   local out_copy="${ws}/gh_out_copy"

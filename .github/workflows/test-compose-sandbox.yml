@@ -42,7 +42,7 @@ jobs:
       with:
         config: success.mjs
         cwd: tests/fixtures/compose-sandbox
-        repo-toolkit-version: 0.17.0
+        repo-toolkit-version: 0.18.0
         artifact-name: compose-sandbox-success-logs
         artifact-policy: always
 
@@ -126,7 +126,7 @@ jobs:
       with:
         config: failure.mjs
         cwd: tests/fixtures/compose-sandbox
-        repo-toolkit-version: 0.17.0
+        repo-toolkit-version: 0.18.0
         artifact-name: compose-sandbox-failure-logs
         artifact-policy: failure
 
