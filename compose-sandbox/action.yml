@@ -13,9 +13,9 @@ inputs:
     required: false
     default: ''
   repo-toolkit-version:
-    description: Exact repo-toolkit version to install via asdf when the binary is not found. Must be an exact semver (e.g. 0.17.0), not latest.
+    description: Exact repo-toolkit version to install via asdf when the binary is not found. Must be an exact semver (e.g. 0.18.0), not latest.
     required: false
-    default: 0.17.0
+    default: 0.18.0
   repo-toolkit-plugin-url:
     description: Git URL for the repo-toolkit asdf plugin
     required: false

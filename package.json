@@ -33,9 +33,9 @@
     "@commitlint/config-conventional": "^21.2.2",
     "@commitlint/format": "^21.2.2",
     "@release-it/bumper": "^8.0.0",
-    "@repo-toolkit/changelog": "^0.17.0",
-    "@repo-toolkit/compose-sandbox": "^0.17.0",
-    "@repo-toolkit/confluence": "^0.17.0",
+    "@repo-toolkit/changelog": "^0.18.0",
+    "@repo-toolkit/compose-sandbox": "^0.18.0",
+    "@repo-toolkit/confluence": "^0.18.0",
     "release-it": "^21.0.2"
   }
 }

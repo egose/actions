@@ -25,7 +25,7 @@ The caller must provide before invoking the action:
 
 ## Usage
 
-All examples pin both the action and the toolkit to immutable refs. Replace `<commit-sha>` with the exact commit SHA from the release you intend to run (check the release notes for the tested `repo-toolkit-version`, current default `0.17.0`).
+All examples pin both the action and the toolkit to immutable refs. Replace `<commit-sha>` with the exact commit SHA from the release you intend to run (check the release notes for the tested `repo-toolkit-version`, current default `0.18.0`).
 
 ### Minimal
 
@@ -88,7 +88,7 @@ Workflow:
   with:
     config: sandbox/database-sandbox.mjs
     cwd: ${{ github.workspace }}
-    repo-toolkit-version: 0.17.0
+    repo-toolkit-version: 0.18.0
     artifact-name: integration-service-logs-${{ matrix.startup-attempt }}
     artifact-policy: failure
 ```
@@ -135,7 +135,7 @@ Workflow:
 | `config` | Yes | — | Path to the toolkit config file (JSON, `.mjs`, or `.cjs`). Resolved relative to `cwd`. |
 | `cwd` | No | `${{ github.workspace }}` | Working directory the engine resolves relative paths against. Must be inside the workspace when provided. |
 | `compose-sandbox-bin` | No | `` | Explicit path to the `repo-toolkit-compose-sandbox` executable. When set, bypasses workspace/`PATH`/`asdf` resolution. Useful for local development and fixture tests. |
-| `repo-toolkit-version` | No | `0.17.0` | Exact `repo-toolkit` version to install via `asdf` when the binary is not found. Must be an exact semver; `latest` is rejected. Pinned to the version tested with this action release. |
+| `repo-toolkit-version` | No | `0.18.0` | Exact `repo-toolkit` version to install via `asdf` when the binary is not found. Must be an exact semver; `latest` is rejected. Pinned to the version tested with this action release. |
 | `repo-toolkit-plugin-url` | No | `https://github.com/egose/repo-toolkit.git` | Git URL for the `repo-toolkit` `asdf` plugin. |
 | `artifact-name` | No | `compose-sandbox-logs` | Name of the GitHub artifact uploaded from the evidence directory. Ignored when `artifact-policy` is `never` or when no evidence is produced. |
 | `artifact-policy` | No | `failure` | When to upload evidence. One of `failure` (only on sandbox failure), `always`, or `never`. |
@@ -145,7 +145,7 @@ No input accepts a multiline shell command. Test and readiness commands belong i
 
 ### Pinned toolkit version
 
-`repo-toolkit-version` defaults to the exact version tested with this action release (`0.17.0`), not `latest`. Every network installation path validates that the requested version is an exact semver and installs that version only. Third-party GitHub Actions used by the action itself are pinned to full commit SHAs. Consumers should keep `uses: egose/actions/compose-sandbox@<sha>` pinned to a commit SHA as well.
+`repo-toolkit-version` defaults to the exact version tested with this action release (`0.18.0`), not `latest`. Every network installation path validates that the requested version is an exact semver and installs that version only. Third-party GitHub Actions used by the action itself are pinned to full commit SHAs. Consumers should keep `uses: egose/actions/compose-sandbox@<sha>` pinned to a commit SHA as well.
 
 ## Outputs
 

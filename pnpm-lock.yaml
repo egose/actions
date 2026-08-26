@@ -21,14 +21,14 @@ importers:
         specifier: ^8.0.0
         version: 8.0.0(release-it@21.0.2(@types/node@25.6.0))
       '@repo-toolkit/changelog':
-        specifier: ^0.17.0
-        version: 0.17.0
+        specifier: ^0.18.0
+        version: 0.18.0
       '@repo-toolkit/compose-sandbox':
-        specifier: ^0.17.0
-        version: 0.17.0
+        specifier: ^0.18.0
+        version: 0.18.0
       '@repo-toolkit/confluence':
-        specifier: ^0.17.0
-        version: 0.17.0
+        specifier: ^0.18.0
+        version: 0.18.0
       release-it:
         specifier: ^21.0.2
         version: 21.0.2(@types/node@25.6.0)
@@ -369,23 +369,23 @@ packages:
     peerDependencies:
       release-it: ^18.0.0 || ^19.0.0 || ^20.0.0 || ^21.0.0
 
-  '@repo-toolkit/changelog@0.17.0':
-    resolution: {integrity: sha512-QyffVnvWngfGIdsVyBld0/12NdKl2MM56mmuNyD3VV1I8oYjFQIawKmF5LNZyaOJEdODhAdYspiv5qm5PmWNdQ==}
+  '@repo-toolkit/changelog@0.18.0':
+    resolution: {integrity: sha512-t6ik6GPd0tqBgBxBl088O3aGCHETbGYKjrn0fQuUxKIc1NroEKTdhyyjygdssAx7ueINvF4YOj4Zf/QHmuC21Q==}
     engines: {node: '>=20'}
     hasBin: true
 
-  '@repo-toolkit/compose-sandbox@0.17.0':
-    resolution: {integrity: sha512-JGdyxnFTMNtH5sEuQmaZVaHRHydUEHC99n/TC/5tkkmvyyYQ8E1rfa7OQaS23FGaGk2VugAMJuaFDCN68+VWdA==}
+  '@repo-toolkit/compose-sandbox@0.18.0':
+    resolution: {integrity: sha512-M+JR/dbDYnbNxzHTamXbFwLvD1KNaAw1V8cw/qL1Ao1/NsXb22tDWltA8ieiQkE8dcC+r8jaRLzIoi8KH34irQ==}
     engines: {node: '>=20'}
     hasBin: true
 
-  '@repo-toolkit/confluence@0.17.0':
-    resolution: {integrity: sha512-abXPLweTLiVprmvw9zyCZJj82STRLd6ce5pyzUQkdvrYY1zubo2AwWtwmZBIojttasl2aN8WRUhpKec323HN4w==}
+  '@repo-toolkit/confluence@0.18.0':
+    resolution: {integrity: sha512-0k4qUGzMU74s4/QycIztNkhI68oXHkzjKC4wIO6o0qehEsZRS8ob/vDZlZ+zu0YBWQVmI9bSZrqHxe0BCsNhng==}
     engines: {node: '>=20'}
     hasBin: true
 
-  '@repo-toolkit/publish-package@0.17.0':
-    resolution: {integrity: sha512-GG3hHNQoq+GteBnujoXJyaGHRi21FZarAQKnajWb6T7WAOOeUmlmPbkJUaosgq6fYX/JeiGprRdLnjmW2s4ijg==}
+  '@repo-toolkit/publish-package@0.18.0':
+    resolution: {integrity: sha512-57it/u9E/kX5C9lp/WE2qfSXV/E0MKm8U5R4E2UkWtyhhOnOJqocqCUit2juhWuq6EJB9PTIUK9bjWd0sdQVng==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -1665,23 +1665,23 @@ snapshots:
       release-it: 21.0.2(@types/node@25.6.0)
       semver: 7.8.5
 
-  '@repo-toolkit/changelog@0.17.0':
+  '@repo-toolkit/changelog@0.18.0':
     dependencies:
-      '@repo-toolkit/publish-package': 0.17.0
+      '@repo-toolkit/publish-package': 0.18.0
       conventional-changelog: 7.2.1
       conventional-changelog-conventionalcommits: 9.3.1
     transitivePeerDependencies:
       - conventional-commits-filter
 
-  '@repo-toolkit/compose-sandbox@0.17.0':
+  '@repo-toolkit/compose-sandbox@0.18.0':
     dependencies:
-      '@repo-toolkit/publish-package': 0.17.0
+      '@repo-toolkit/publish-package': 0.18.0
 
-  '@repo-toolkit/confluence@0.17.0':
+  '@repo-toolkit/confluence@0.18.0':
     dependencies:
-      '@repo-toolkit/publish-package': 0.17.0
+      '@repo-toolkit/publish-package': 0.18.0
 
-  '@repo-toolkit/publish-package@0.17.0':
+  '@repo-toolkit/publish-package@0.18.0':
     dependencies:
       '@clack/prompts': 1.7.0
 

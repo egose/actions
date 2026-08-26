@@ -8,7 +8,7 @@ Minimal real-Compose fixtures for GitHub-hosted integration tests.
 
 Both fixtures use distinct `projectName` values (`cs-test-success`, `cs-test-failure`) and bounded timeouts (60s startup/readiness, 30s test/cleanup) so parallel jobs do not leak containers/networks.
 
-The workflow `test-compose-sandbox.yml` exercises both success and forced-failure paths through `uses: ./compose-sandbox` with the exact published `@repo-toolkit/compose-sandbox@0.17.0`.
+The workflow `test-compose-sandbox.yml` exercises both success and forced-failure paths through `uses: ./compose-sandbox` with the exact published `@repo-toolkit/compose-sandbox@0.18.0`.
 
 Consumer-shaped references:
 
