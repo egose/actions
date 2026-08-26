@@ -395,22 +395,6 @@ main() {
   # Resolve binary BEFORE cd to cwd so workspace lookups use runner workspace
   local bin
   bin="$(resolve_binary)" || exit 1
-  echo "✅ using binary: $bin" >&2
-  echo "📋 cwd: $cwd_abs" >&2
-  echo "📋 config: $config_abs" >&2
-
-  if command -v docker >/dev/null 2>&1; then
-    echo "🐳 checking docker compose version..." >&2
-    local compose_ver_raw=""
-    compose_ver_raw="$(docker compose version 2>&1 | head -n 1 | tr -d '\r' | sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g' 2>/dev/null | cut -c1-500 || true)"
-    if [[ -n "$compose_ver_raw" ]]; then
-      echo "🐳 $compose_ver_raw" >&2
-    else
-      echo "⚠️ docker compose version returned empty" >&2
-    fi
-  else
-    echo "⚠️ docker executable not found; engine preflight will report failure" >&2
-  fi
 
   # Now cd to cwd for engine execution (engine expects cwd)
   cd "$cwd_abs"
@@ -418,8 +402,6 @@ main() {
   # Build engine invocation array
   local -a cmd
   cmd=("$bin" "--config" "$config_abs" "--cwd" "$cwd_abs")
-
-  echo "🚀 ${bin} --config [REDACTED] --cwd [REDACTED]" >&2
 
   local engine_status=0
   "${cmd[@]}" || engine_status=$?
@@ -541,50 +523,9 @@ main() {
   fi
   artifact_output="$(sanitize_for_output "$artifact_output")"
 
-  # Console summary for visibility in every step (engine also logs per-phase)
-  {
-    local summary_icon="✅"
-    if [[ "$sanitized_outcome" == "failure" ]]; then summary_icon="❌"; fi
-    if [[ -n "${GITHUB_ACTIONS:-}" ]]; then echo "::group::Compose sandbox summary" >&2; fi
-    echo "${summary_icon} outcome=${sanitized_outcome} phase=${sanitized_phase:-none} engine_status=${engine_status}" >&2
-    if [[ -n "$sanitized_evidence_dir" ]]; then echo "📁 evidence-directory=${sanitized_evidence_dir}" >&2; fi
-    if [[ -n "$sanitized_manifest" ]]; then echo "📄 result-manifest=${sanitized_manifest}" >&2; fi
-    if [[ -n "$manifest_path" && -f "$manifest_path" ]]; then
-      local timings_line=""
-      if command -v python3 >/dev/null 2>&1; then
-        timings_line="$(python3 - "$manifest_path" <<'PY' 2>/dev/null || true
-import json,sys
-p=sys.argv[1]
-try:
-  d=json.load(open(p))
-  t=d.get('timings',{})
-  files=d.get('evidenceFiles',[])
-  phase=d.get('phase','')
-  outcome=d.get('outcome','')
-  err=d.get('errors',{}).get('primary','')
-  print(f"timings total={t.get('total',0)}ms validate={t.get('validate',0)}ms prepare={t.get('prepare',0)}ms preflight={t.get('preflight',0)}ms start={t.get('start',0)}ms readiness={t.get('readiness',0)}ms test={t.get('test',0)}ms evidence={t.get('evidence',0)}ms cleanup={t.get('cleanup',0)}ms | phase={phase} outcome={outcome} files={','.join(files)}")
-  if err:
-    print(f"primary error: {str(err)[:500]}")
-except: pass
-PY
-)"
-        if [[ -n "$timings_line" ]]; then
-          echo "⏱ $timings_line" | head -n 5 >&2
-        fi
-      elif command -v jq >/dev/null 2>&1; then
-        echo "⏱ $(jq -c '{phase,outcome,timings,evidenceFiles} // empty' "$manifest_path" 2>/dev/null | cut -c1-500)" >&2
-      fi
-      if [[ -n "$artifact_output" ]]; then
-        echo "📦 artifact=${artifact_output} policy=${policy}" >&2
-      else
-        echo "📦 artifact: none (policy=${policy} outcome=${sanitized_outcome})" >&2
-      fi
-    else
-      echo "⚠️ no manifest found at ${manifest_path:-<none>}" >&2
-      if [[ -n "$artifact_output" ]]; then echo "📦 artifact=${artifact_output} (no manifest)" >&2; fi
-    fi
-    if [[ -n "${GITHUB_ACTIONS:-}" ]]; then echo "::endgroup::" >&2; fi
-  } || true
+  if [[ -n "$artifact_output" ]]; then
+    echo "📦 artifact=${artifact_output} policy=${policy}" >&2
+  fi
 
   # Write outputs to GITHUB_OUTPUT
   if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
