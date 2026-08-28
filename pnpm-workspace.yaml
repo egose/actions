@@ -3,7 +3,7 @@
 # gate (e.g. freshly-released @repo-toolkit/* packages that the action needs
 # immediately). Re-run `pnpm install` to refresh; do not format/sort by hand.
 minimumReleaseAgeExclude:
-- '@repo-toolkit/confluence@0.17.0 || 0.18.0'
-- '@repo-toolkit/publish-package@0.17.0 || 0.18.0'
-- '@repo-toolkit/changelog@0.17.0 || 0.18.0'
-- '@repo-toolkit/compose-sandbox@0.17.0 || 0.18.0'
+- '@repo-toolkit/confluence@0.20.0'
+- '@repo-toolkit/publish-package@0.20.0'
+- '@repo-toolkit/changelog@0.20.0'
+- '@repo-toolkit/compose-sandbox@0.20.0'
