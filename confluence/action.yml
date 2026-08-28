@@ -34,6 +34,10 @@ inputs:
     description: Version-message suffix appended to every page/attachment PUT
     required: false
     default: ''
+  page-title-strategy:
+    description: Leaf page title strategy — filename-stem (default), filename, sentence-case-parent, sentence-case-parents, sentence-case-path. Folder pages keep raw directory names.
+    required: false
+    default: filename-stem
   skip-unchanged:
     description: Skip pages whose body is unchanged (default true)
     required: false
@@ -86,6 +90,7 @@ runs:
       CONFLUENCE_INPUT_SPACE_KEY: ${{ inputs.space-key }}
       CONFLUENCE_INPUT_PARENT_PAGE_ID: ${{ inputs.parent-page-id }}
       CONFLUENCE_INPUT_VERSION_MESSAGE: ${{ inputs.version-message }}
+      CONFLUENCE_INPUT_PAGE_TITLE_STRATEGY: ${{ inputs.page-title-strategy }}
       CONFLUENCE_INPUT_SKIP_UNCHANGED: ${{ inputs.skip-unchanged }}
       CONFLUENCE_INPUT_DRY_RUN: ${{ inputs.dry-run }}
       CONFLUENCE_INPUT_CWD: ${{ inputs.cwd }}
