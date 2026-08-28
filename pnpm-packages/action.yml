@@ -14,6 +14,10 @@ inputs:
     description: Do not run package lifecycle scripts during install
     default: 'false'
     required: false
+  tools:
+    description: CLI tools to cache via pnpm dlx (not added to any package.json)
+    default: ''
+    required: false
 
 runs:
   using: composite
@@ -27,16 +31,22 @@ runs:
         echo "::error::pnpm store path returned an empty path"
         exit 1
       fi
+      dlx_cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/pnpm/dlx"
+      tools_hash="$(printf '%s' "${{ inputs.tools }}" | sha256sum | cut -c1-16)"
       echo "node-version=${node_version#v}" >> "$GITHUB_OUTPUT"
       echo "store-path=$store_path" >> "$GITHUB_OUTPUT"
+      echo "dlx-cache-path=$dlx_cache_dir" >> "$GITHUB_OUTPUT"
+      echo "tools-hash=$tools_hash" >> "$GITHUB_OUTPUT"
     shell: bash
 
   - name: Cache pnpm store
     # see https://github.com/actions/cache/commits/main/
     uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
     with:
-      path: ${{ steps.cache-metadata.outputs.store-path }}
-      key: pnpm-${{ runner.os }}-node-${{ steps.cache-metadata.outputs.node-version }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+      path: |
+        ${{ steps.cache-metadata.outputs.store-path }}
+        ${{ steps.cache-metadata.outputs.dlx-cache-path }}
+      key: pnpm-${{ runner.os }}-node-${{ steps.cache-metadata.outputs.node-version }}-${{ hashFiles('**/pnpm-lock.yaml') }}-tools-${{ steps.cache-metadata.outputs.tools-hash }}
       restore-keys: |
         pnpm-${{ runner.os }}-node-${{ steps.cache-metadata.outputs.node-version }}-
         pnpm-${{ runner.os }}-
@@ -49,3 +59,10 @@ runs:
       PACKAGE_FROZEN: ${{ inputs.frozen }}
       PACKAGE_IGNORE_SCRIPTS: ${{ inputs.ignore-scripts }}
       PACKAGE_PATHS: ${{ inputs.paths }}
+
+  - name: Cache CLI tools
+    if: inputs.tools != ''
+    run: bash "${{ github.action_path }}/../scripts/warm-dlx-cache.sh"
+    shell: bash
+    env:
+      DLX_TOOLS: ${{ inputs.tools }}
