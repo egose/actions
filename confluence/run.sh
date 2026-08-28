@@ -35,6 +35,9 @@ join_args() {
   if [[ -n "${CONFLUENCE_INPUT_VERSION_MESSAGE:-}" ]]; then
     out+=" --version-message ${CONFLUENCE_INPUT_VERSION_MESSAGE}"
   fi
+  if [[ -n "${CONFLUENCE_INPUT_PAGE_TITLE_STRATEGY:-}" ]]; then
+    out+=" --page-title-strategy ${CONFLUENCE_INPUT_PAGE_TITLE_STRATEGY}"
+  fi
   if [[ "${CONFLUENCE_INPUT_SKIP_UNCHANGED:-true}" == "false" ]]; then
     out+=" --no-skip-unchanged"
   fi

@@ -88,6 +88,7 @@ touching Confluence:
 | `space-key` | No | `` | Confluence space key (`ENG`, `~1234`, ...). Resolved to a `spaceId` via the API. |
 | `parent-page-id` | No | `` | Numeric Confluence page id under which docs will be published. Must be `^[0-9]+$`. |
 | `version-message` | No | `` | Suffix appended to every page/attachment PUT. |
+| `page-title-strategy` | No | `filename-stem` | Leaf page title strategy: `filename-stem` (default, filename without final `.md`), `filename` (with extension), `sentence-case-parent` (stem + immediate parent), `sentence-case-parents` (stem + all parents), `sentence-case-path` (stem + all parents + filename with extension). Folder pages keep raw directory names. See `@repo-toolkit/confluence` docs for naming contract, root-file behavior, and migration notes. |
 | `skip-unchanged` | No | `true` | Skip pages whose body is byte-identical to the current Confluence storage value. |
 | `dry-run` | No | `false` | Walk the doc tree and log the plan without making API calls. |
 | `cwd` | No | `${{ github.workspace }}` | Working directory the CLI resolves `folder` against. |
