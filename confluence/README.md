@@ -18,8 +18,10 @@ No setup steps are required in the consuming repository — `node` and `repo-too
 - Resolves the Confluence `spaceId` from `space-key` via the Confluence REST API v2.
 - For each sub-folder path segment, finds or creates a parent page (cached per run by parent id + title).
 - For each Markdown file: converts the body to Confluence storage format, uploads local images as attachments and rewrites the corresponding placeholders, then PUTs the page with `version.number = current + 1` (optimistic concurrency — concurrent writes get HTTP 409).
-- Skips pages whose body is unchanged when `skip-unchanged` is `true` (default).
-- Reuses existing `node`/`pnpm`/`repo-toolkit`, or installs missing runtimes automatically via `asdf`.
+ - Skips pages whose body is unchanged when `skip-unchanged` is `true` (default).
+ - Labels every created/adopted page with `repo-toolkit-confluence` and, by default, prunes stale labeled descendants (deepest-first, never unlabeled); `clean: true` moves **all** page descendants to trash before recreation (`parentPageId` retained, recoverable via Confluence trash, never purged).
+ - Maintains a deterministic `Synced documentation` summary region in the parent page (provenance, stats, linked tree, guidance); opt-out with `update-parent-page: 'false'`.
+ - Reuses existing `node`/`pnpm`/`repo-toolkit`, or installs missing runtimes automatically via `asdf`.
 
 ## Usage
 
@@ -91,6 +93,8 @@ touching Confluence:
 | `page-title-strategy` | No | `filename-stem` | Leaf page title strategy: `filename-stem` (default, filename without final `.md`), `filename` (with extension), `sentence-case-parent` (stem + immediate parent), `sentence-case-parents` (stem + all parents), `sentence-case-path` (stem + all parents + filename with extension). Folder pages keep raw directory names. See `@repo-toolkit/confluence` docs for naming contract, root-file behavior, and migration notes. |
 | `skip-unchanged` | No | `true` | Skip pages whose body is byte-identical to the current Confluence storage value. |
 | `dry-run` | No | `false` | Walk the doc tree and log the plan without making API calls. |
+| `clean` | No | `false` | Move all page descendants to trash before recreation. **WARNING destructive** — all page descendants, including manual/unlabeled pages, are moved to trash; `parentPageId` is retained (trash, not purge). |
+| `update-parent-page` | No | `true` | Update the parent page summary region (provenance, stats, linked tree). Set to `false` to skip parent updates and leave any existing region untouched. |
 | `cwd` | No | `${{ github.workspace }}` | Working directory the CLI resolves `folder` against. |
 | `confluence-bin` | No | `` | Path to the `repo-toolkit-confluence` binary. Auto-resolved from `node_modules/.bin` when empty. |
 | `asdf-version` | No | `v0.20.0` | `asdf` version to install when `node` is missing. |

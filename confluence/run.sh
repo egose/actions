@@ -44,6 +44,12 @@ join_args() {
   if [[ "${CONFLUENCE_INPUT_DRY_RUN:-false}" == "true" ]]; then
     out+=" --dry-run"
   fi
+  if [[ "${CONFLUENCE_INPUT_CLEAN:-false}" == "true" ]]; then
+    out+=" --clean"
+  fi
+  if [[ "${CONFLUENCE_INPUT_UPDATE_PARENT_PAGE:-true}" == "false" ]]; then
+    out+=" --no-update-parent-page"
+  fi
   echo "$out"
 }
 

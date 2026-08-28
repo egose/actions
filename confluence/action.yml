@@ -46,6 +46,14 @@ inputs:
     description: Walk the doc tree and log the plan without making API calls
     required: false
     default: 'false'
+  clean:
+    description: Move all page descendants to trash before recreation. WARNING destructive — all page descendants, including manual/unlabeled pages, are moved to trash; parentPageId is retained.
+    required: false
+    default: 'false'
+  update-parent-page:
+    description: Update parent page summary region. Set to 'false' to skip parent summary updates.
+    required: false
+    default: 'true'
   cwd:
     description: Working directory (default $GITHUB_WORKSPACE)
     required: false
@@ -93,6 +101,8 @@ runs:
       CONFLUENCE_INPUT_PAGE_TITLE_STRATEGY: ${{ inputs.page-title-strategy }}
       CONFLUENCE_INPUT_SKIP_UNCHANGED: ${{ inputs.skip-unchanged }}
       CONFLUENCE_INPUT_DRY_RUN: ${{ inputs.dry-run }}
+      CONFLUENCE_INPUT_CLEAN: ${{ inputs.clean }}
+      CONFLUENCE_INPUT_UPDATE_PARENT_PAGE: ${{ inputs.update-parent-page }}
       CONFLUENCE_INPUT_CWD: ${{ inputs.cwd }}
       CONFLUENCE_INPUT_BIN: ${{ inputs.confluence-bin }}
       CONFLUENCE_ACTION_PATH: ${{ github.action_path }}
