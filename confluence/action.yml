@@ -58,6 +58,14 @@ inputs:
     description: Working directory (default $GITHUB_WORKSPACE)
     required: false
     default: ${{ github.workspace }}
+  mermaid:
+    description: Mermaid diagram rendering — auto (install mmdc only when a mermaid fence is detected), true (always install, fail if unavailable), or false (never install; diagrams sync as code macros)
+    required: false
+    default: auto
+  mermaid-cli-version:
+    description: Version of @mermaid-js/mermaid-cli to install when mmdc is missing. Use 'latest' for newest release.
+    required: false
+    default: latest
   confluence-bin:
     description: Path to the repo-toolkit-confluence binary. Leave empty to auto-resolve from node_modules/.bin, asdf shims, or npx.
     required: false
@@ -104,6 +112,8 @@ runs:
       CONFLUENCE_INPUT_CLEAN: ${{ inputs.clean }}
       CONFLUENCE_INPUT_UPDATE_PARENT_PAGE: ${{ inputs.update-parent-page }}
       CONFLUENCE_INPUT_CWD: ${{ inputs.cwd }}
+      CONFLUENCE_INPUT_MERMAID: ${{ inputs.mermaid }}
+      CONFLUENCE_INPUT_MERMAID_CLI_VERSION: ${{ inputs.mermaid-cli-version }}
       CONFLUENCE_INPUT_BIN: ${{ inputs.confluence-bin }}
       CONFLUENCE_ACTION_PATH: ${{ github.action_path }}
       CONFLUENCE_ASDF_VERSION: ${{ inputs.asdf-version }}
