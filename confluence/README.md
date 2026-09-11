@@ -96,6 +96,8 @@ touching Confluence:
 | `clean` | No | `false` | Move all page descendants to trash before recreation. **WARNING destructive** — all page descendants, including manual/unlabeled pages, are moved to trash; `parentPageId` is retained (trash, not purge). |
 | `update-parent-page` | No | `true` | Update the parent page summary region (provenance, stats, linked tree). Set to `false` to skip parent updates and leave any existing region untouched. |
 | `cwd` | No | `${{ github.workspace }}` | Working directory the CLI resolves `folder` against. |
+| `mermaid` | No | `auto` | Mermaid diagram rendering: `auto` installs `mmdc` only when a ` ```mermaid ` fence is detected under `folder`; `true` always installs and fails the run if unavailable; `false` never installs (diagrams sync as code macros). |
+| `mermaid-cli-version` | No | `latest` | Version of `@mermaid-js/mermaid-cli` to install when `mmdc` is missing. |
 | `confluence-bin` | No | `` | Path to the `repo-toolkit-confluence` binary. Auto-resolved from `node_modules/.bin` when empty. |
 | `asdf-version` | No | `v0.20.0` | `asdf` version to install when `node` is missing. |
 | `nodejs-version` | No | `26.5.0` | Node.js version to install with `asdf` when `node` is missing. |
@@ -115,6 +117,7 @@ touching Confluence:
 - If `pnpm` is missing, it is installed via `asdf` as well so the consuming repo's `pnpm install` step can run (optional for `asdf` toolkit path).
 - If `repo-toolkit-confluence` is not found in `node_modules/.bin` or `PATH`, the action installs `repo-toolkit` via `asdf` (`asdf plugin add repo-toolkit https://github.com/egose/repo-toolkit.git && asdf install repo-toolkit <version>`), which requires `node` and `jq`.
 - Existing `node`/`pnpm`/`repo-toolkit` installations are reused as-is.
+- Mermaid diagrams are rendered to PNG via `mmdc` (`@mermaid-js/mermaid-cli`). With the default `mermaid: auto`, the action installs it globally with `npm install -g` only when a ` ```mermaid ` fence exists under `folder` and `mmdc` is not already on `PATH`; existing `mmdc` installations are reused as-is. The install pre-approves only puppeteer's install script (`--allow-scripts=puppeteer` on npm 11+, which otherwise blocks it) so the Chrome download runs non-interactively. A passwordless-`sudo` retry covers runners where the global npm prefix is not user-writable. On minimal self-hosted images without Chrome's shared libraries, either install your distro's Chrome dependencies or point `PUPPETEER_EXECUTABLE_PATH` at a system Chrome to skip the download.
 - `asdf` install reuses the `asdf-install` action (`../asdf-install/install.sh`); the asdf shims directory is added to `GITHUB_PATH` so subsequent workflow steps also see the installed tools.
 
 ## Binary Resolution

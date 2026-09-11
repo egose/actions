@@ -245,6 +245,96 @@ ensure_runtimes() {
   fi
 }
 
+# Mermaid diagrams (` ```mermaid ` fences) are rendered by the `mmdc` binary
+# (@mermaid-js/mermaid-cli). Without it the sync still succeeds but diagrams
+# fall back to code macros. `mode` is auto|true|false (default auto).
+ensure_mermaid_renderer() {
+  local mode="${CONFLUENCE_INPUT_MERMAID:-auto}"
+
+  case "$mode" in
+    false|0|no|off)
+      echo "ℹ️  Mermaid rendering disabled (mermaid: false); diagrams will sync as code macros"
+      return 0
+      ;;
+    true|1|yes|on)
+      ;;
+    auto|'')
+      ;;
+    *)
+      echo >&2 "❌ invalid 'mermaid' input (expected auto|true|false), got: ${mode}"
+      exit 1
+      ;;
+  esac
+
+  # Dry-run performs no rendering, so mmdc is never needed there.
+  if [[ "${CONFLUENCE_INPUT_DRY_RUN:-false}" == "true" ]]; then
+    return 0
+  fi
+
+  if command -v mmdc >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if [[ "$mode" == "auto" || -z "$mode" ]]; then
+    if ! mermaid_used_in_folder; then
+      return 0
+    fi
+  fi
+
+  if install_mmdc; then
+    return 0
+  fi
+
+  if [[ "$mode" == "true" || "$mode" == "1" || "$mode" == "yes" || "$mode" == "on" ]]; then
+    echo >&2 "❌ mermaid rendering was explicitly requested (mermaid: true) but mmdc could not be installed"
+    exit 1
+  fi
+  echo >&2 "⚠️  mmdc unavailable; Mermaid blocks will sync as code macros"
+}
+
+# True when a ```mermaid fence header exists anywhere under the docs folder,
+# so the (heavy, Chrome-bundling) mmdc install only runs when it can matter.
+mermaid_used_in_folder() {
+  local folder="${CONFLUENCE_INPUT_FOLDER:-docs}"
+  grep -rqi --include='*.md' --exclude-dir=node_modules --exclude-dir=.git \
+    -E '^[[:space:]]{0,3}```[[:space:]]*mermaid' "$folder" 2>/dev/null
+}
+
+install_mmdc() {
+  if ! command -v npm >/dev/null 2>&1; then
+    echo >&2 "❌ npm not found; cannot install @mermaid-js/mermaid-cli"
+    return 1
+  fi
+
+  local spec="@mermaid-js/mermaid-cli"
+  if [[ -n "${CONFLUENCE_INPUT_MERMAID_CLI_VERSION:-}" && "${CONFLUENCE_INPUT_MERMAID_CLI_VERSION}" != "latest" ]]; then
+    spec+="@${CONFLUENCE_INPUT_MERMAID_CLI_VERSION}"
+  fi
+
+  # npm 11+ blocks install scripts by default; puppeteer's postinstall
+  # downloads the Chrome binary mmdc renders with, so pre-approve only it.
+  # Older npm runs postinstall scripts implicitly and needs no flag.
+  local allow_scripts_args=()
+  local npm_major; npm_major="$(npm --version 2>/dev/null | cut -d. -f1)"
+  if [[ "${npm_major:-0}" -ge 11 ]] 2>/dev/null; then
+    allow_scripts_args=(--allow-scripts=puppeteer)
+  fi
+
+  echo >&2 "➡️ mmdc not found; installing ${spec} for Mermaid rendering (includes a Chrome download via puppeteer)..."
+  if ! npm install -g "$spec" "${allow_scripts_args[@]}" >&2; then
+    echo >&2 "⚠️  global npm install failed; retrying non-interactively with sudo..."
+    sudo -n npm install -g "$spec" "${allow_scripts_args[@]}" >&2 || return 1
+  fi
+
+  local npm_bin; npm_bin="$(npm prefix -g)/bin"
+  export PATH="$npm_bin:$PATH"
+  echo "$npm_bin" >> "$GITHUB_PATH" 2>/dev/null || true
+  if command -v asdf >/dev/null 2>&1; then
+    asdf reshim nodejs >&2 || true
+  fi
+  command -v mmdc >/dev/null 2>&1
+}
+
 main() {
   if [[ -z "${CONFLUENCE_INPUT_FOLDER:-}" ]]; then
     echo >&2 "❌ 'folder' input is required"
@@ -263,6 +353,8 @@ main() {
 
   local cwd="${CONFLUENCE_INPUT_CWD:-${GITHUB_WORKSPACE:-$(pwd)}}"
   cd "$cwd"
+
+  ensure_mermaid_renderer
 
   if [[ "${CONFLUENCE_INPUT_DRY_RUN:-false}" != "true" ]]; then
     # In real mode, fail fast when required Confluence credentials are missing.
