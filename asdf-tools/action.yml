@@ -6,6 +6,10 @@ inputs:
     description: The version of asdf
     default: v0.20.0
     required: false
+  github-token:
+    description: GitHub token for authenticated api.github.com requests (avoids intermittent 403 from the 60 req/h unauthenticated quota)
+    default: ${{ github.token }}
+    required: false
   plugins:
     description: Newline-separated list of additional plugins (e.g., <plugin>=<url>)
     required: false
@@ -26,6 +30,7 @@ runs:
     shell: bash
     env:
       ASDF_VERSION: ${{ inputs.version }}
+      GITHUB_TOKEN: ${{ inputs.github-token }}
 
   - name: Cache tools
     # See https://github.com/actions/cache/commits/main/

@@ -6,6 +6,10 @@ inputs:
     description: The version of asdf
     default: v0.20.0
     required: false
+  github-token:
+    description: GitHub token for authenticated api.github.com requests (avoids intermittent 403 from the 60 req/h unauthenticated quota)
+    default: ${{ github.token }}
+    required: false
 
 runs:
   using: composite
@@ -22,3 +26,4 @@ runs:
     shell: bash
     env:
       ASDF_VERSION: ${{ inputs.version }}
+      GITHUB_TOKEN: ${{ inputs.github-token }}
