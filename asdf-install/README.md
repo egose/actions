@@ -44,6 +44,7 @@ jobs:
 | Name | Required | Default | Description |
 | --- | --- | --- | --- |
 | `version` | No | `v0.20.0` | Version of the `asdf` binary to install. |
+| `github-token` | No | `${{ github.token }}` | GitHub token for authenticated `api.github.com` requests. Prevents intermittent `403` rate-limit failures from the `60 req/h` unauthenticated quota on shared runners. |
 
 ## Notes
 
