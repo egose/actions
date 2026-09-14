@@ -79,7 +79,7 @@ runs:
     run: bash "${{ github.action_path }}/summarize.sh"
   - name: Upload sandbox evidence
     if: ${{ always() && steps.sandbox.outputs.artifact-name != '' && steps.sandbox.outputs.evidence-directory != '' }}
-    uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
+    uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
     with:
       name: ${{ steps.sandbox.outputs.artifact-name }}
       path: ${{ steps.sandbox.outputs.evidence-directory }}

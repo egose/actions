@@ -41,7 +41,7 @@ runs:
 
   - name: Cache pnpm store
     # see https://github.com/actions/cache/commits/main/
-    uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
+    uses: actions/cache@3edfce9056124e459a23f683a21433670d47daca
     with:
       path: |
         ${{ steps.cache-metadata.outputs.store-path }}
