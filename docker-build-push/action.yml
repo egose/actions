@@ -357,6 +357,7 @@ runs:
       exit-code: 1
       ignore-unfixed: ${{ inputs.trivy-ignore-unfixed }}
       severity: ${{ inputs.trivy-severity }}
+      limit-severities-for-sarif: 'true'
 
   - name: Upload gated Trivy scan results
     if: ${{ always() && inputs.publish-mode == 'gated' && inputs.trivy == 'true' && inputs.upload-sarif == 'true' }}
