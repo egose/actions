@@ -138,7 +138,7 @@ ACTBOX-02 and later depend on the matching toolkit CLI/result-manifest contract.
 
 ### Task ACTBOX-01: Define The Composite Action Contract
 
-Status: pending
+Status: completed
 
 Priority: P1
 
@@ -177,9 +177,15 @@ Acceptance criteria:
 - Documentation clearly separates action, engine, and consumer responsibilities.
 - No action input is evaluated as shell source.
 
+Review: 2026-10-14
+- Disposition: reconciled/completed (original `pending` preserved in git history)
+- Evidence: `compose-sandbox/action.yml` (planned inputs/outputs; caller values passed via `COMPOSE_SANDBOX_INPUT_*` env; artifact/summary steps separate with `always()` conditions); `compose-sandbox/README.md` (database-shaped + template-shaped usage, pinned refs); root `README.md` module entry; commits `5380d49` (action + tests), `2c5a341`/`a0c2680` (action pins), `fd15cd2` (toolkit default `0.18.0`)
+- Verification: not run in this pass (read-only reconciliation; `npm run actionlint`, `npm run test:shell`, Docker checks not executed)
+- Remaining work: none
+
 ### Task ACTBOX-02: Resolve And Invoke The Pinned Toolkit CLI Safely
 
-Status: pending
+Status: completed
 
 Priority: P0
 
@@ -219,9 +225,15 @@ Acceptance criteria:
 - Toolkit nonzero status remains nonzero and its result manifest remains available when produced.
 - `npm run test:shell` passes.
 
+Review: 2026-10-14
+- Disposition: reconciled/completed (original `pending` preserved in git history)
+- Evidence: `compose-sandbox/run.sh` (exact-semver validation rejecting `latest`/empty; Bash-array invocation `cmd=("$bin" "--config" "$config_abs" "--cwd" "$cwd_abs")`; no `eval`/`bash -c`); `tests/test-compose-sandbox.sh` covers explicit/workspace/PATH/asdf resolution (`test_explicit`, `test_workspace`, `test_path`, `test_asdf`), literal passing of malicious config/cwd with marker-file assertion (`test_injection`), version rejection (`test_version_reject`), and toolkit failure propagation (`test_toolkit_failure`); commit `5380d49`
+- Verification: `bash tests/test-compose-sandbox.sh` from repo root on 2026-10-14 → all 12 checks passed (`compose-sandbox shell tests passed`, exit 0); `actionlint`/Docker checks not executed
+- Remaining work: none
+
 ### Task ACTBOX-03: Upload Evidence And Publish Redacted Outputs
 
-Status: pending
+Status: completed
 
 Priority: P0
 
@@ -258,6 +270,12 @@ Acceptance criteria:
 - A malformed, missing, escaping, or secret-bearing manifest is handled without evaluating content or exposing secrets.
 - The original sandbox failure remains the action outcome after evidence handling.
 - `npm run actionlint` and `npm run test:shell` pass.
+
+Review: 2026-10-14
+- Disposition: reconciled/completed (original `pending` preserved in git history)
+- Evidence: `compose-sandbox/summarize.sh` (manifest validated as JSON without sourcing; redacted summary of outcome/failed-phase/artifact refs only); `compose-sandbox/action.yml` (failure/always/never artifact policy; pinned `actions/upload-artifact@043fb46...`; failure outcome preserved after evidence steps); `tests/test-compose-sandbox.sh` covers policy behavior (`test_policy`), malformed/escaping manifests (`test_malformed`), secret-bearing manifests (`test_secret`), and artifact-name validation (`test_artifact_name_invalid`)
+- Verification: `bash tests/test-compose-sandbox.sh` from repo root on 2026-10-14 → all 12 checks passed (covers `test_policy`, `test_malformed`, `test_secret`, `test_artifact_name_invalid`; exit 0)
+- Remaining work: none
 
 ### Task ACTBOX-04: Add Real Compose CI And Consumer Documentation
 
@@ -304,6 +322,12 @@ Acceptance criteria:
 - Documentation examples contain no mutable action or toolkit references.
 - `npm run actionlint`, `npm run test:shell`, and `pre-commit run --all-files` pass.
 
+Review: 2026-10-14
+- Disposition: still pending (read-only reconciliation; status unchanged)
+- Evidence: `.github/workflows/test-compose-sandbox.yml` exists; `compose-sandbox/action.yml` pins `actions/upload-artifact@043fb46...`; toolkit default version present in action inputs
+- Verification: not run in this pass (GitHub-hosted success/failure job results, downloadable artifact check, post-run no-leak proof, and `pre-commit`/`actionlint`/`test:shell` not executed here)
+- Remaining work: confirm GitHub-hosted success + expected-failure jobs pass assertions; confirm failure evidence downloadable under configured artifact name; confirm post-run no leaked containers/networks/volumes; confirm docs contain no mutable action/toolkit refs; run `npm run actionlint`, `npm run test:shell`, `pre-commit run --all-files`
+
 ### Task ACTBOX-05: Perform Independent Action Integration Review
 
 Status: pending
@@ -345,6 +369,12 @@ Acceptance criteria:
 - No mutable toolkit resolution or shell evaluation remains.
 - No generated credentials, tokens, environment values, or unbounded raw logs enter outputs, summaries, or committed fixtures.
 - Any deferred issue records rationale, owner, and residual risk.
+
+Review: 2026-10-14
+- Disposition: still pending (read-only reconciliation; status unchanged)
+- Evidence: ACTBOX-01/02/03 reconciled completed above; ACTBOX-04 pending so final integration review has no complete input
+- Verification: not run in this pass (independent review per its 4 requirements + shell/actionlint/pre-commit/real-Compose checks not executed here)
+- Remaining work: independent review of (1) all inputs/toolkit values as data not shell source, (2) exact toolkit version + pinned third-party SHAs, (3) failure/malformed-manifest/artifact-failure/cancellation/timeout semantics, (4) docs/inputs/outputs/summary/manifest/published-toolkit agreement; run and record shell, actionlint, pre-commit, real-Compose workflow checks
 
 ## Dependency And Parallelization Guidance
 
