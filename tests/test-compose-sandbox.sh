@@ -123,8 +123,7 @@ case "${1:-}" in
   install)
     if [[ "${2:-}" == "repo-toolkit" ]]; then
       printf 'install %s\n' "${3:-}" >> "$log_file"
-      # only allow pinned version 0.18.0 for compose tests
-      if [[ "${3:-}" != "0.18.0" ]]; then
+      if [[ "${3:-}" != "0.45.0" ]]; then
         printf 'unexpected version %s\n' "${3:-}" >&2
         exit 1
       fi
@@ -151,8 +150,8 @@ CLI
   reshim) printf 'reshim %s\n' "${2:-all}" >> "$log_file"; exit 0 ;;
   which)
     if [[ "${2:-}" == "repo-toolkit-compose-sandbox" ]]; then
-      if [[ -x "${asdf_data_dir}/installs/repo-toolkit/0.18.0/bin/repo-toolkit-compose-sandbox" ]]; then
-        printf '%s\n' "${asdf_data_dir}/installs/repo-toolkit/0.18.0/bin/repo-toolkit-compose-sandbox"
+      if [[ -x "${asdf_data_dir}/installs/repo-toolkit/0.45.0/bin/repo-toolkit-compose-sandbox" ]]; then
+        printf '%s\n' "${asdf_data_dir}/installs/repo-toolkit/0.45.0/bin/repo-toolkit-compose-sandbox"
         exit 0
       fi
       exit 1
@@ -371,12 +370,12 @@ test_asdf() {
   local fake_action="${ws}/fake-action"
   mkdir -p "$fake_action"
 
-  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=0.18.0" "COMPOSE_SANDBOX_ACTION_PATH=$fake_action"
+  run_sandbox "$ws" "${ws}/work" "sandbox/config.mjs" "COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION=" "COMPOSE_SANDBOX_ACTION_PATH=$fake_action"
 
   local code
   code="$(cat "$ws/exit_code")"
   assert_eq "$code" "0" "asdf: exit"
-  assert_contains "$asdf_log" "install 0.18.0" "asdf: installed exact version"
+  assert_contains "$asdf_log" "install 0.45.0" "asdf: installed exact default version"
   assert_contains "$cli_log" "--config" "asdf: cli invoked"
   rm -rf "$ws"
   echo "✓ asdf pinned"
@@ -452,7 +451,7 @@ test_version_reject() {
   code="$(cat "$ws/exit_code")"
   if [[ "$code" == "0" ]]; then echo "FAIL version reject ^ should fail" >&2; exit 1; fi
 
-  # empty version should fallback to default 0.18.0 and succeed when bin is available
+  # empty version should fall back to the pinned default and succeed when a bin is available
   local good_bin="${ws}/good-bin/repo-toolkit-compose-sandbox"
   mkdir -p "$(dirname "$good_bin")"
   make_fake_bin "$good_bin" "success"

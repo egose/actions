@@ -50,18 +50,18 @@ case "${1:-}" in
     ;;
   list)
     if [[ "${2:-}" == "all" && "${3:-}" == "repo-toolkit" ]]; then
-      printf '0.6.0\n0.7.0\n0.14.0\n'
+      printf '0.6.0\n0.45.0\n0.14.0\n'
       exit 0
     fi
     if [[ "${2:-}" == "repo-toolkit" ]]; then
-      printf '  0.14.0\n'
+      printf '  0.45.0\n'
       exit 0
     fi
     ;;
   install)
     if [[ "${2:-}" == "repo-toolkit" ]]; then
       printf 'install %s\n' "${3:-}" >> "$log_file"
-      if [[ "${3:-}" != "0.14.0" ]]; then
+      if [[ "${3:-}" != "0.45.0" ]]; then
         printf 'unexpected repo-toolkit version: %s\n' "${3:-}" >&2
         exit 1
       fi
@@ -93,8 +93,8 @@ CLI
     ;;
   which)
     if [[ "${2:-}" == "repo-toolkit-confluence" ]]; then
-      if [[ -x "${asdf_data_dir}/installs/repo-toolkit/0.14.0/bin/repo-toolkit-confluence" ]]; then
-        printf '%s\n' "${asdf_data_dir}/installs/repo-toolkit/0.14.0/bin/repo-toolkit-confluence"
+      if [[ -x "${asdf_data_dir}/installs/repo-toolkit/0.45.0/bin/repo-toolkit-confluence" ]]; then
+        printf '%s\n' "${asdf_data_dir}/installs/repo-toolkit/0.45.0/bin/repo-toolkit-confluence"
         exit 0
       fi
       exit 1
@@ -107,7 +107,7 @@ exit 1
 EOF
 chmod 755 "${bin_dir}/asdf"
 
-(
+run_action() (
   cd "$workspace"
   PATH="${bin_dir}:/usr/bin:/bin" \
   ASDF_DATA_DIR="$asdf_data_dir" \
@@ -118,11 +118,15 @@ chmod 755 "${bin_dir}/asdf"
   CONFLUENCE_ACTION_PATH="${repo_root}/confluence" \
   CONFLUENCE_INPUT_FOLDER='docs' \
   CONFLUENCE_INPUT_DRY_RUN='true' \
+  CONFLUENCE_INPUT_DISAMBIGUATE_FOLDER_TITLES="${1:-false}" \
+  CONFLUENCE_INPUT_OVERWRITE_PARENT_PAGE="${2:-false}" \
   CONFLUENCE_REPO_TOOLKIT_VERSION='latest' \
   bash "${repo_root}/confluence/run.sh" >"$stdout_file" 2>"$stderr_file"
 )
 
-if ! grep -Fxq 'install 0.14.0' "$asdf_log"; then
+run_action
+
+if ! grep -Fxq 'install 0.45.0' "$asdf_log"; then
   echo 'expected repo-toolkit latest to resolve to the highest concrete version before install'
   exit 1
 fi
@@ -139,6 +143,18 @@ fi
 
 if grep -Fq 'Downloading repo-toolkit test fixture' "$stdout_file"; then
   echo 'expected installer stdout to stay out of the resolved binary command substitution'
+  exit 1
+fi
+
+run_action true false
+if ! grep -Fxq -- '--folder docs --disambiguate-folder-titles --dry-run' "$cli_log"; then
+  echo 'expected disambiguate-folder-titles to be forwarded independently'
+  exit 1
+fi
+
+run_action false true
+if ! grep -Fxq -- '--folder docs --dry-run --overwrite-parent-page' "$cli_log"; then
+  echo 'expected overwrite-parent-page to be forwarded independently'
   exit 1
 fi
 

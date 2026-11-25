@@ -37,6 +37,8 @@ jobs:
         cwd: tests/fixtures/confluence
         folder: docs
         dry-run: 'true'
+        disambiguate-folder-titles: 'true'
+        overwrite-parent-page: 'true'
 
     - name: Verify dry-run output mentions both pages
       shell: bash

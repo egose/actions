@@ -38,6 +38,9 @@ join_args() {
   if [[ -n "${CONFLUENCE_INPUT_PAGE_TITLE_STRATEGY:-}" ]]; then
     out+=" --page-title-strategy ${CONFLUENCE_INPUT_PAGE_TITLE_STRATEGY}"
   fi
+  if [[ "${CONFLUENCE_INPUT_DISAMBIGUATE_FOLDER_TITLES:-false}" == "true" ]]; then
+    out+=" --disambiguate-folder-titles"
+  fi
   if [[ "${CONFLUENCE_INPUT_SKIP_UNCHANGED:-true}" == "false" ]]; then
     out+=" --no-skip-unchanged"
   fi
@@ -49,6 +52,9 @@ join_args() {
   fi
   if [[ "${CONFLUENCE_INPUT_UPDATE_PARENT_PAGE:-true}" == "false" ]]; then
     out+=" --no-update-parent-page"
+  fi
+  if [[ "${CONFLUENCE_INPUT_OVERWRITE_PARENT_PAGE:-false}" == "true" ]]; then
+    out+=" --overwrite-parent-page"
   fi
   echo "$out"
 }
