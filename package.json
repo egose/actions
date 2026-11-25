@@ -29,13 +29,13 @@
     "changelog": "repo-toolkit-changelog"
   },
   "devDependencies": {
-    "@commitlint/cli": "^21.2.2",
-    "@commitlint/config-conventional": "^21.2.2",
-    "@commitlint/format": "^21.2.2",
-    "@release-it/bumper": "^8.0.0",
-    "@repo-toolkit/changelog": "^0.23.0",
-    "@repo-toolkit/compose-sandbox": "^0.23.0",
-    "@repo-toolkit/confluence": "^0.23.0",
-    "release-it": "^21.0.2"
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "@commitlint/format": "^21.2.3",
+    "@release-it/bumper": "^8.0.1",
+    "@repo-toolkit/changelog": "^0.45.0",
+    "@repo-toolkit/compose-sandbox": "^0.45.0",
+    "@repo-toolkit/confluence": "^0.45.0",
+    "release-it": "^21.1.3"
   }
 }

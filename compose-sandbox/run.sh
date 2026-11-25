@@ -9,6 +9,7 @@ set -euo pipefail
 # ----------------------------------------------------------------------------
 
 COMPOSE_SANDBOX_RESOLVED_BIN=""
+readonly DEFAULT_REPO_TOOLKIT_VERSION="0.45.0"
 
 validate_semver() {
   local v="$1"
@@ -23,7 +24,7 @@ validate_semver() {
   fi
   # semver: X.Y.Z with optional prerelease/build
   if ! [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
-    echo "❌ $label must be an exact semver (e.g. 0.18.0), got: $v" >&2
+    echo "❌ $label must be an exact semver (e.g. $DEFAULT_REPO_TOOLKIT_VERSION), got: $v" >&2
     return 1
   fi
   if [[ "$v" == *".."* || "$v" == *"//"* ]]; then
@@ -145,7 +146,7 @@ install_repo_toolkit_via_asdf() {
   fi
   ensure_asdf_available || return 1
 
-  local toolkit_version="${COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION:-0.18.0}"
+  local toolkit_version="${COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION:-$DEFAULT_REPO_TOOLKIT_VERSION}"
   local toolkit_plugin_url="${COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_PLUGIN_URL:-https://github.com/egose/repo-toolkit.git}"
   validate_semver "$toolkit_version" "repo-toolkit-version" || return 1
   COMPOSE_SANDBOX_RESOLVED_BIN=""
@@ -248,7 +249,7 @@ resolve_binary() {
     fi
   fi
 
-  echo >&2 "❌ repo-toolkit-compose-sandbox not found. Install it via pnpm add -D @repo-toolkit/compose-sandbox@${COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION:-0.18.0} or ensure asdf is available."
+  echo >&2 "❌ repo-toolkit-compose-sandbox not found. Install it via pnpm add -D @repo-toolkit/compose-sandbox@${COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION:-$DEFAULT_REPO_TOOLKIT_VERSION} or ensure asdf is available."
   return 1
 }
 
@@ -353,7 +354,7 @@ main() {
   local retention="${COMPOSE_SANDBOX_INPUT_ARTIFACT_RETENTION_DAYS:-}"
   validate_retention "$retention" || exit 1
 
-  local version_input="${COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION:-0.18.0}"
+  local version_input="${COMPOSE_SANDBOX_INPUT_REPO_TOOLKIT_VERSION:-$DEFAULT_REPO_TOOLKIT_VERSION}"
   validate_semver "$version_input" "repo-toolkit-version" || exit 1
 
   local cwd_input="${COMPOSE_SANDBOX_INPUT_CWD:-${GITHUB_WORKSPACE:-$(pwd)}}"

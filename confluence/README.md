@@ -20,7 +20,7 @@ No setup steps are required in the consuming repository — `node` and `repo-too
 - For each Markdown file: converts the body to Confluence storage format, uploads local images as attachments and rewrites the corresponding placeholders, then PUTs the page with `version.number = current + 1` (optimistic concurrency — concurrent writes get HTTP 409).
  - Skips pages whose body is unchanged when `skip-unchanged` is `true` (default).
  - Labels every created/adopted page with `repo-toolkit-confluence` and, by default, prunes stale labeled descendants (deepest-first, never unlabeled); `clean: true` moves **all** page descendants to trash before recreation (`parentPageId` retained, recoverable via Confluence trash, never purged).
- - Maintains a deterministic `Synced documentation` summary region in the parent page (provenance, stats, linked tree, guidance); opt-out with `update-parent-page: 'false'`.
+  - Maintains a deterministic `Synced documentation` summary region in the parent page (provenance, stats, linked tree); opt out with `update-parent-page: 'false'`, or use `overwrite-parent-page: 'true'` for an entirely generated parent body.
  - Reuses existing `node`/`pnpm`/`repo-toolkit`, or installs missing runtimes automatically via `asdf`.
 
 ## Usage
@@ -75,8 +75,20 @@ touching Confluence:
     asdf-version: 'v0.20.0'
     nodejs-version: '26.5.0'
     pnpm-version: '11.15.0'
-    repo-toolkit-version: 'latest' # or '0.13.0'
+    repo-toolkit-version: '0.45.0'
 ```
+
+### Folder-title conflicts and generated parent pages
+
+With repo-toolkit 0.45.0 or later, keep Markdown file titles distinct with
+`page-title-strategy: sentence-case-path` and enable `disambiguate-folder-titles: 'true'`
+to resolve repeated folder names without renaming source folders. Existing folder
+pages are reused, while a new folder with a taken title gets a path-qualified one.
+
+Independently, set `overwrite-parent-page: 'true'` only if the parent body should
+contain nothing but the generated summary. This replaces any handwritten content.
+If the action reuses an installed CLI, that binary must also be 0.45.0 or later;
+`repo-toolkit-version` only controls the `asdf` fallback installation.
 
 ## Inputs
 
@@ -90,11 +102,13 @@ touching Confluence:
 | `space-key` | No | `` | Confluence space key (`ENG`, `~1234`, ...). Resolved to a `spaceId` via the API. |
 | `parent-page-id` | No | `` | Numeric Confluence page id under which docs will be published. Must be `^[0-9]+$`. |
 | `version-message` | No | `` | Suffix appended to every page/attachment PUT. |
-| `page-title-strategy` | No | `filename-stem` | Leaf page title strategy: `filename-stem` (default, filename without final `.md`), `filename` (with extension), `sentence-case-parent` (stem + immediate parent), `sentence-case-parents` (stem + all parents), `sentence-case-path` (stem + all parents + filename with extension). Folder pages keep raw directory names. See `@repo-toolkit/confluence` docs for naming contract, root-file behavior, and migration notes. |
+| `page-title-strategy` | No | `filename-stem` | Leaf page title strategy: `filename-stem` (default, filename without final `.md`), `filename` (with extension), `sentence-case-parent` (stem + immediate parent), `sentence-case-parents` (stem + all parents), `sentence-case-path` (stem + all parents + filename with extension). See `@repo-toolkit/confluence` docs for naming contract, root-file behavior, and migration notes. |
+| `disambiguate-folder-titles` | No | `false` | Use path-qualified titles for new folder pages whose short name is taken in the space. Requires repo-toolkit 0.45.0 or later. |
 | `skip-unchanged` | No | `true` | Skip pages whose body is byte-identical to the current Confluence storage value. |
 | `dry-run` | No | `false` | Walk the doc tree and log the plan without making API calls. |
 | `clean` | No | `false` | Move all page descendants to trash before recreation. **WARNING destructive** — all page descendants, including manual/unlabeled pages, are moved to trash; `parentPageId` is retained (trash, not purge). |
-| `update-parent-page` | No | `true` | Update the parent page summary region (provenance, stats, linked tree). Set to `false` to skip parent updates and leave any existing region untouched. |
+| `update-parent-page` | No | `true` | Update the parent page summary (provenance, stats, linked tree). Set to `false` to leave the parent body untouched. |
+| `overwrite-parent-page` | No | `false` | Replace the entire parent body with the generated summary, including removing any manual content. Ignored if `update-parent-page` is `false`. Requires repo-toolkit 0.45.0 or later. |
 | `cwd` | No | `${{ github.workspace }}` | Working directory the CLI resolves `folder` against. |
 | `mermaid` | No | `auto` | Mermaid diagram rendering: `auto` installs `mmdc` only when a ` ```mermaid ` fence is detected under `folder`; `true` always installs and fails the run if unavailable; `false` never installs (diagrams sync as code macros). |
 | `mermaid-cli-version` | No | `latest` | Version of `@mermaid-js/mermaid-cli` to install when `mmdc` is missing. |

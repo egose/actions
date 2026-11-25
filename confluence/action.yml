@@ -35,9 +35,13 @@ inputs:
     required: false
     default: ''
   page-title-strategy:
-    description: Leaf page title strategy — filename-stem (default), filename, sentence-case-parent, sentence-case-parents, sentence-case-path. Folder pages keep raw directory names.
+    description: Leaf page title strategy — filename-stem (default), filename, sentence-case-parent, sentence-case-parents, sentence-case-path.
     required: false
     default: filename-stem
+  disambiguate-folder-titles:
+    description: Use a path-qualified title when a new folder page's short title is already taken in the space. Requires repo-toolkit 0.45.0 or newer.
+    required: false
+    default: 'false'
   skip-unchanged:
     description: Skip pages whose body is unchanged (default true)
     required: false
@@ -51,9 +55,13 @@ inputs:
     required: false
     default: 'false'
   update-parent-page:
-    description: Update parent page summary region. Set to 'false' to skip parent summary updates.
+    description: Update the parent page summary. Set to 'false' to leave the parent body untouched.
     required: false
     default: 'true'
+  overwrite-parent-page:
+    description: Replace the entire parent page body with the generated summary, removing manual content. Ignored when update-parent-page is false. Requires repo-toolkit 0.45.0 or newer.
+    required: false
+    default: 'false'
   cwd:
     description: Working directory (default $GITHUB_WORKSPACE)
     required: false
@@ -107,10 +115,12 @@ runs:
       CONFLUENCE_INPUT_PARENT_PAGE_ID: ${{ inputs.parent-page-id }}
       CONFLUENCE_INPUT_VERSION_MESSAGE: ${{ inputs.version-message }}
       CONFLUENCE_INPUT_PAGE_TITLE_STRATEGY: ${{ inputs.page-title-strategy }}
+      CONFLUENCE_INPUT_DISAMBIGUATE_FOLDER_TITLES: ${{ inputs.disambiguate-folder-titles }}
       CONFLUENCE_INPUT_SKIP_UNCHANGED: ${{ inputs.skip-unchanged }}
       CONFLUENCE_INPUT_DRY_RUN: ${{ inputs.dry-run }}
       CONFLUENCE_INPUT_CLEAN: ${{ inputs.clean }}
       CONFLUENCE_INPUT_UPDATE_PARENT_PAGE: ${{ inputs.update-parent-page }}
+      CONFLUENCE_INPUT_OVERWRITE_PARENT_PAGE: ${{ inputs.overwrite-parent-page }}
       CONFLUENCE_INPUT_CWD: ${{ inputs.cwd }}
       CONFLUENCE_INPUT_MERMAID: ${{ inputs.mermaid }}
       CONFLUENCE_INPUT_MERMAID_CLI_VERSION: ${{ inputs.mermaid-cli-version }}
